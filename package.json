@@ -1,0 +1,23 @@
+{
+  "name": "meshy-authorized-helper",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@wxt-dev/module-svelte": "latest",
+    "svelte": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "wxt": "^0.20.26"
+  }
+}
