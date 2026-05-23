@@ -1,8 +1,17 @@
 # Meshy Downloader
 
-WXT + Svelte extension for your own Meshy deployment.
+WXT + Svelte extension.
 
 Detects and downloads models from meshy.ai for free.
+
+## Browser Support
+
+| Browser | Status |
+|---|---|
+| Chrome | ✅ Works |
+| Firefox | ❌ Does not work |
+| Safari | ⚪ Not tested |
+
 
 ## Install
 
