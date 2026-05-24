@@ -4,8 +4,6 @@ WXT + Svelte extension.
 
 Detects and downloads models from meshy.ai for free.
 
-_TODO: Compressed release file will be added until May 26th._
-
 ## Browser Support
 
 | Browser | Status |
