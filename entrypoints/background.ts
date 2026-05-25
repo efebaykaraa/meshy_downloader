@@ -26,7 +26,7 @@ async function getActiveTabState(): Promise<TabState> {
     try {
       state.page = await browser.tabs.sendMessage(tab.id, { type: 'get-page-state' }) as PageState;
     } catch {
-      // Content script may not have loaded yet, or the tab may be on a restricted page.
+      console.warn('Failed to get page state from content script. The content script might not be ready yet.');
     }
   }
 

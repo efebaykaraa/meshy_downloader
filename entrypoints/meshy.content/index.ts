@@ -1,9 +1,10 @@
-import { browser, createShadowRootUi, defineContentScript, injectScript } from '#imports';
+import { browser, createShadowRootUi, defineContentScript } from '#imports';
 import { mount, unmount } from 'svelte';
 import Overlay from './Overlay.svelte';
 import type { MeshyAuthPayload, PageState } from '../../src/lib/types';
 
-const BRIDGE_SOURCE = 'meshy-authorized-helper-main-world';
+const BRIDGE_SOURCE = 'meshy-downloader-main-world';
+const CONTENT_SOURCE = 'meshy-downloader-content-script';
 
 let injected = false;
 let lastAuth: MeshyAuthPayload | undefined;
@@ -11,6 +12,20 @@ let lastGlbBuffer: ArrayBuffer | undefined;
 let lastGlbSize: number | undefined;
 let pendingDownload = false;
 let lastDownloadAt: number | undefined;
+let modelGeneration = 0;
+let currentModelKey: string | undefined;
+const glbCache = new Map<string, { buffer: ArrayBuffer; byteLength: number }>();
+
+function getStableModelKey(url: string | undefined) {
+  if (!url) return undefined;
+
+  try {
+    const parsed = new URL(url, window.location.href);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return url.split('?')[0];
+  }
+}
 
 function getPageState(): PageState {
   return {
@@ -45,28 +60,75 @@ function downloadBuffer(buffer: ArrayBuffer, filename = makeFileName()) {
 }
 
 function notifyOverlay(type: string, detail?: unknown) {
-  window.dispatchEvent(new CustomEvent(`meshy-helper:${type}`, { detail }));
+  window.dispatchEvent(new CustomEvent(`meshy-downloader:${type}`, { detail }));
+}
+
+function toArrayBuffer(value: unknown): ArrayBuffer | null {
+  if (Object.prototype.toString.call(value) === '[object ArrayBuffer]') {
+    return value as ArrayBuffer;
+  }
+  if (ArrayBuffer.isView(value)) {
+    if (!(value.buffer instanceof ArrayBuffer)) return null;
+    return value.buffer.slice(value.byteOffset, value.byteOffset + value.byteLength);
+  }
+  return null;
 }
 
 async function handleAuthCaptured(auth: MeshyAuthPayload) {
   lastAuth = auth;
-  lastGlbBuffer = undefined;
-  lastGlbSize = undefined;
-  pendingDownload = false;
 
-  await browser.runtime.sendMessage({ type: 'record-auth', auth });
-  notifyOverlay('auth-captured', auth);
+  await browser.runtime.sendMessage({ type: 'record-auth', auth }).catch(() => {});
+  console.debug('[Meshy Downloader] Meshy auth captured', auth);
+}
+
+function handleModelJsonDetected(payload: { url?: string }) {
+  const modelKey = getStableModelKey(payload.url);
+  const isNewModel = modelKey !== undefined && modelKey !== currentModelKey;
+
+  currentModelKey = modelKey ?? currentModelKey;
+
+  console.debug('[Meshy Downloader] model.json detected', { url: payload.url, modelKey: currentModelKey, isNewModel });
+
+  if (isNewModel) {
+    modelGeneration += 1;
+    lastGlbBuffer = undefined;
+    lastGlbSize = undefined;
+    pendingDownload = false;
+
+    notifyOverlay('model-changed', {
+      ...payload,
+      generation: modelGeneration,
+      modelKey: currentModelKey,
+    });
+  }
+
+  if (!currentModelKey) return;
+  const cached = glbCache.get(currentModelKey);
+  if (!cached) return;
+
+  lastGlbBuffer = cached.buffer.slice(0);
+  lastGlbSize = cached.byteLength;
+  pendingDownload = false;
+  notifyOverlay('glb-ready', {
+    byteLength: cached.byteLength,
+    generation: modelGeneration,
+    modelKey: currentModelKey,
+    cached: true,
+  });
 }
 
 function handleGlbReady(buffer: ArrayBuffer, byteLength: number) {
   lastGlbBuffer = buffer;
   lastGlbSize = byteLength;
-  notifyOverlay('glb-ready', { byteLength });
+  if (currentModelKey) {
+    glbCache.set(currentModelKey, { buffer: buffer.slice(0), byteLength });
+  }
+  notifyOverlay('glb-ready', { byteLength, generation: modelGeneration, modelKey: currentModelKey });
 
   if (pendingDownload) {
     pendingDownload = false;
     downloadBuffer(buffer);
-    notifyOverlay('download-started', { byteLength });
+    notifyOverlay('download-started', { byteLength, generation: modelGeneration, modelKey: currentModelKey });
   }
 }
 
@@ -83,13 +145,17 @@ async function handleUserChoice(choice: 'yes' | 'no' | 'never') {
     return;
   }
 
-  pendingDownload = true;
   if (lastGlbBuffer) {
     const buffer = lastGlbBuffer;
     pendingDownload = false;
     downloadBuffer(buffer);
-    notifyOverlay('download-started', { byteLength: buffer.byteLength });
+    notifyOverlay('download-started', {
+      byteLength: buffer.byteLength,
+      generation: modelGeneration,
+      modelKey: currentModelKey,
+    });
   } else {
+    pendingDownload = true;
     notifyOverlay('waiting-for-glb');
   }
 }
@@ -99,26 +165,6 @@ export default defineContentScript({
   runAt: 'document_start',
   cssInjectionMode: 'ui',
   async main(ctx) {
-    await browser.runtime.sendMessage({ type: 'record-page-seen' }).catch(() => {});
-
-    await injectScript('/meshy-main-world.js', { keepInDom: true });
-    injected = true;
-
-    const ui = await createShadowRootUi(ctx, {
-      name: 'meshy-authorized-helper-overlay',
-      position: 'overlay',
-      anchor: 'body',
-      onMount: (container) => {
-        const app = mount(Overlay, { target: container });
-        return app;
-      },
-      onRemove: (app) => {
-        unmount(app);
-      },
-    });
-
-    ui.mount();
-
     window.addEventListener('message', (event) => {
       if (event.source !== window) return;
       const data = event.data;
@@ -135,15 +181,40 @@ export default defineContentScript({
         return;
       }
 
+      if (data.type === 'model-json-detected') {
+        handleModelJsonDetected(data.payload as { url?: string });
+        return;
+      }
+
       if (data.type === 'glb-ready') {
         const payload = data.payload as { data?: ArrayBuffer; byteLength?: number };
-        if (payload.data instanceof ArrayBuffer) {
-          handleGlbReady(payload.data, payload.byteLength ?? payload.data.byteLength);
+        const buffer = toArrayBuffer(payload.data);
+        if (buffer) {
+          handleGlbReady(buffer, payload.byteLength ?? buffer.byteLength);
         }
       }
     });
 
-    window.addEventListener('meshy-helper:user-choice', (event) => {
+    window.postMessage({ source: CONTENT_SOURCE, type: 'status-request' }, window.location.origin);
+
+    await browser.runtime.sendMessage({ type: 'record-page-seen' }).catch(() => {});
+
+    const ui = await createShadowRootUi(ctx, {
+      name: 'meshy-downloader-overlay',
+      position: 'overlay',
+      anchor: () => document.body ?? document.documentElement,
+      onMount: (container) => {
+        const app = mount(Overlay, { target: container });
+        return app;
+      },
+      onRemove: (app) => {
+        if (app) unmount(app);
+      },
+    });
+
+    ui.mount();
+
+    window.addEventListener('meshy-downloader:user-choice', (event) => {
       const choice = (event as CustomEvent).detail;
       if (choice === 'yes' || choice === 'no' || choice === 'never') {
         void handleUserChoice(choice);

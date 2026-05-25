@@ -6,7 +6,7 @@ export type MeshyAuthPayload = {
   url: string;
 };
 
-export type HelperState = {
+export type DownloaderState = {
   neverShowAgain: boolean;
   lastSeenUrl?: string;
   lastActionAt?: number;

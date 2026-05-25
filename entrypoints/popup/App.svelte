@@ -1,10 +1,10 @@
 <script lang="ts">
   import { browser } from '#imports';
   import { onMount } from 'svelte';
-  import type { HelperState, TabState } from '../../src/lib/types';
+  import type { DownloaderState, TabState } from '../../src/lib/types';
 
   let tabState: TabState | null = null;
-  let helperState: HelperState | null = null;
+  let downloaderState: DownloaderState | null = null;
   let loading = true;
   let message = '';
 
@@ -21,7 +21,7 @@
 
   async function refresh() {
     loading = true;
-    [tabState, helperState] = await Promise.all([
+    [tabState, downloaderState] = await Promise.all([
       browser.runtime.sendMessage({ type: 'get-active-tab-state' }),
       browser.runtime.sendMessage({ type: 'get-state' }),
     ]);
@@ -44,12 +44,12 @@
   }
 
   async function neverShowAgain() {
-    helperState = await browser.runtime.sendMessage({ type: 'set-never-show-again', value: true });
+    downloaderState = await browser.runtime.sendMessage({ type: 'set-never-show-again', value: true });
     message = 'Overlay disabled.';
   }
 
   async function enableAgain() {
-    helperState = await browser.runtime.sendMessage({ type: 'reset-state' });
+    downloaderState = await browser.runtime.sendMessage({ type: 'reset-state' });
     message = 'Overlay restored.';
   }
 
@@ -57,7 +57,7 @@
 </script>
 
 <main>
-  <h1>Meshy Helper</h1>
+  <h1>Meshy Downloader</h1>
 
   {#if loading}
     <p>Checking current tab...</p>
@@ -74,13 +74,13 @@
         <div class="row"><span>Timestamp</span><code>{tabState.page.lastAuth?.timestamp}</code></div>
         <div class="row"><span>Signature</span><code>{maskSignature(tabState.page.lastAuth?.signature)}</code></div>
       </section>
-    {:else if helperState?.lastAuth}
+    {:else if downloaderState?.lastAuth}
       <section class="card muted-card">
         <h2>Last stored auth</h2>
         <p>The current tab has not captured a fresh call yet. Click a model in the workspace.</p>
-        <div class="row"><span>Host</span><code>{helperState.lastAuth.hostname}</code></div>
-        <div class="row"><span>Time</span><code>{formatTime(helperState.lastAuth.capturedAt)}</code></div>
-        <div class="row"><span>Signature</span><code>{maskSignature(helperState.lastAuth.signature)}</code></div>
+        <div class="row"><span>Host</span><code>{downloaderState.lastAuth.hostname}</code></div>
+        <div class="row"><span>Time</span><code>{formatTime(downloaderState.lastAuth.capturedAt)}</code></div>
+        <div class="row"><span>Signature</span><code>{maskSignature(downloaderState.lastAuth.signature)}</code></div>
       </section>
     {:else}
       <p class="hint">No auth call captured yet. Click a model in the workspace; that triggers the loader worker authorization call.</p>
@@ -90,7 +90,7 @@
       <button on:click={downloadActiveTabMesh}>Download buffered GLB</button>
       <p class="hint">Buffered size: {((tabState.page.lastGlbSize ?? 0) / 1024 / 1024).toFixed(2)} MB</p>
     {:else if tabState?.page?.pendingDownload}
-      <p class="hint">Waiting for worker decode result. Tiny goblin is chewing.</p>
+      <p class="hint">Waiting for worker decode result.</p>
     {:else}
       <button class="secondary" on:click={downloadActiveTabMesh}>Try downloading active model</button>
     {/if}
@@ -100,7 +100,7 @@
 
   <hr />
 
-  {#if helperState?.neverShowAgain}
+  {#if downloaderState?.neverShowAgain}
     <button class="secondary" on:click={enableAgain}>Enable auto-popup</button>
   {:else}
     <button class="secondary" on:click={neverShowAgain}>Disable auto-popup</button>
@@ -146,7 +146,7 @@
     color: #9ee493;
   }
 
-  .hint, .muted {
+  .hint {
     color: #b8b8bd;
   }
 
