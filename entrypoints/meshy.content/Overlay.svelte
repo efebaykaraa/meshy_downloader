@@ -3,7 +3,7 @@
 
   let visible = false;
   let leaving = false;
-  let phase: 'ready' | 'downloading' = 'ready';
+  let phase: 'ready' | 'downloading' | 'pending' = 'ready';
   let lastGlbSize: number | undefined;
   let hideTimer: number | undefined;
   let leaveTimer: number | undefined;
@@ -67,8 +67,6 @@
     if (visibleGeneration == null || generation <= visibleGeneration) return;
     
     scheduleAutoHide();
-
-    visibleGeneration = undefined;
   }
 
   function onGlbReady(event: Event) {
@@ -82,6 +80,15 @@
     scheduleAutoHide();
   }
 
+  function onDownloadPending(event: Event) {
+    phase = 'pending';
+    clearHideTimer();
+    clearLeaveTimer();
+    leaving = false;
+    visible = true;
+    // Don't auto-hide while pending — the user is waiting for their download
+  }
+
   function onDownloadStarted(event: Event) {
     phase = 'downloading';
     clearLeaveTimer();
@@ -93,6 +100,7 @@
   onMount(() => {
     window.addEventListener('meshy-downloader:model-changed', onModelChanged);
     window.addEventListener('meshy-downloader:glb-ready', onGlbReady);
+    window.addEventListener('meshy-downloader:download-pending', onDownloadPending);
     window.addEventListener('meshy-downloader:download-started', onDownloadStarted);
   });
 
@@ -101,6 +109,7 @@
     clearLeaveTimer();
     window.removeEventListener('meshy-downloader:model-changed', onModelChanged);
     window.removeEventListener('meshy-downloader:glb-ready', onGlbReady);
+    window.removeEventListener('meshy-downloader:download-pending', onDownloadPending);
     window.removeEventListener('meshy-downloader:download-started', onDownloadStarted);
   });
 </script>
@@ -116,6 +125,12 @@
         <div class="actions">
           <button on:click={yes}>Download now</button>
           <button class="secondary" on:click={no}>Close</button>
+        </div>
+      {:else if phase === 'pending'}
+        <h2>Waiting for decode…</h2>
+        <p>Download will start automatically once the model is ready.</p>
+        <div class="actions">
+          <button class="secondary" on:click={no}>Cancel</button>
         </div>
       {:else if phase === 'downloading'}
         <h2>Download started</h2>

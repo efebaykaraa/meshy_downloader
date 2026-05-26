@@ -116,6 +116,19 @@ function isModelBinaryUrl(input: unknown) {
   return !!url && /(^|\/)model\.meshy$/i.test(url.pathname);
 }
 
+function maybeCaptureModelBinaryUrl(input: unknown) {
+  const url = parseUrl(input);
+  if (!url) return;
+  if (!/(^|\/)model\.meshy$/i.test(url.pathname)) return;
+
+  console.debug('[Meshy Downloader] Meshy model binary URL detected', url.href);
+  postToContent('model-binary-detected', {
+    url: url.href,
+    capturedAt: Date.now(),
+    pageUrl: window.location.href,
+  });
+}
+
 async function maybePostGlbFromBuffer(buffer: ArrayBuffer, sourceUrl?: string) {
   if (!looksLikeGlb(buffer)) {
     console.debug('[Meshy Downloader] Binary response is not decoded GLB yet', {
@@ -135,27 +148,45 @@ async function maybePostGlbFromBuffer(buffer: ArrayBuffer, sourceUrl?: string) {
 
 function maybeCaptureProcessResult(message: unknown) {
   if (!isRecord(message)) return;
-  if (message.type !== 'process' || message.success !== true) return;
 
-  const raw = toArrayBuffer(message.data);
-  if (!raw || !looksLikeGlb(raw)) return;
+  // Primary path: explicit process result with { type: 'process', success: true, data: ArrayBuffer }
+  if (message.type === 'process' && message.success === true) {
+    const raw = toArrayBuffer(message.data);
+    if (raw && looksLikeGlb(raw)) {
+      console.debug('[Meshy Downloader] GLB captured from worker process result', { byteLength: raw.byteLength });
+      postGlbReady(raw);
+      return;
+    }
+  }
 
-  postGlbReady(raw);
+  // Fallback: scan all top-level ArrayBuffer-like values in the message for GLB magic bytes.
+  // Some model types may use a different message schema (e.g. different `type` value or
+  // no `success` field), so we check any buffer-like property for the glTF magic header.
+  for (const key of Object.keys(message)) {
+    const raw = toArrayBuffer(message[key]);
+    if (raw && looksLikeGlb(raw)) {
+      console.debug('[Meshy Downloader] GLB captured from worker message property', { key, byteLength: raw.byteLength });
+      postGlbReady(raw);
+      return;
+    }
+  }
 }
 
 const inspectedWorkers = new WeakSet<Worker>();
+
+function inspectWorkerMessageEvent(event: MessageEvent) {
+  try {
+    maybeCaptureProcessResult(event.data);
+  } catch (error) {
+    console.warn('[Meshy Downloader] Failed to inspect worker message', error);
+  }
+}
 
 function attachWorkerListener(worker: Worker) {
   if (inspectedWorkers.has(worker)) return;
   inspectedWorkers.add(worker);
 
-  worker.addEventListener('message', (event) => {
-    try {
-      maybeCaptureProcessResult(event.data);
-    } catch (error) {
-      console.warn('[Meshy Downloader] Failed to inspect worker message', error);
-    }
-  });
+  worker.addEventListener('message', inspectWorkerMessageEvent);
 }
 
 export function installMeshyMainWorldHook() {
@@ -197,9 +228,26 @@ export function installMeshyMainWorldHook() {
     );
   };
 
+  // Intercept worker.onmessage = handler assignment.
+  // If the page sets onmessage instead of using addEventListener, our listener
+  // from attachWorkerListener would still fire (addEventListener and onmessage
+  // are independent), but we must ensure attachWorkerListener is called at all.
+  const onmessageDescriptor = Object.getOwnPropertyDescriptor(NativeWorker.prototype, 'onmessage');
+  if (onmessageDescriptor) {
+    const nativeOnmessageSetter = onmessageDescriptor.set;
+    Object.defineProperty(NativeWorker.prototype, 'onmessage', {
+      ...onmessageDescriptor,
+      set(handler: ((this: Worker, ev: MessageEvent) => unknown) | null) {
+        attachWorkerListener(this);
+        return nativeOnmessageSetter?.call(this, handler);
+      },
+    });
+  }
+
   window.fetch = function patchedFetch(input: RequestInfo | URL, init?: RequestInit) {
     try {
       maybeCaptureModelJson(input);
+      maybeCaptureModelBinaryUrl(input);
     } catch (error) {
       console.warn('[Meshy Downloader] Failed to inspect fetch URL', error);
     }
@@ -224,6 +272,7 @@ export function installMeshyMainWorldHook() {
   ) {
     try {
       maybeCaptureModelJson(url);
+      maybeCaptureModelBinaryUrl(url);
     } catch (error) {
       console.warn('[Meshy Downloader] Failed to inspect XHR URL', error);
     }
