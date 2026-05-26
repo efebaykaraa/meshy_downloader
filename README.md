@@ -63,45 +63,6 @@ Firefox -> about:debugging#/runtime/this-firefox -> Load Temporary Add-on -> Sel
 
 Firefox may show a WXT warning about `data_collection_permissions`. The extension still builds; the warning is related to Firefox extension store requirements.
 
-## Install In Chrome
-
-1. Run `pnpm build`.
-2. Open Chrome and go to `chrome://extensions`.
-3. Enable `Developer mode`.
-4. Click `Load unpacked`.
-5. Select the `.output/chrome-mv3` folder.
-6. Open `https://www.meshy.ai/workspace`.
-7. Open or switch models. When a decoded GLB is available, the `Download now` popup appears.
-
-After rebuilding, click the extension's reload button on `chrome://extensions`.
-
-## Install In Firefox
-
-1. Run `pnpm build:firefox`.
-2. Open Firefox and go to `about:debugging#/runtime/this-firefox`.
-3. Click `Load Temporary Add-on`.
-4. Select `.output/firefox-mv3/manifest.json`.
-5. Open `https://www.meshy.ai/workspace`.
-6. Open or switch models. When a decoded GLB is available, the `Download now` popup appears.
-
-Firefox temporary add-ons are removed when Firefox closes. Reload the add-on from `about:debugging` after rebuilding.
-
-## Package A Zip
-
-Chrome zip:
-
-```bash
-pnpm zip
-```
-
-Firefox zip:
-
-```bash
-pnpm zip:firefox
-```
-
-Generated archives are written under `.output`.
-
 ## Troubleshooting
 
 - If the popup does not appear, reload the Meshy tab after loading or reloading the extension.
