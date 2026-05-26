@@ -65,9 +65,7 @@ Firefox may show a WXT warning about `data_collection_permissions`. The extensio
 
 ## Troubleshooting
 
-- If the popup does not appear, reload the Meshy tab after loading or reloading the extension.
-- If Chrome or Firefox still uses an old build, reload the extension from the browser extension page.
-- If the popup appears but no download starts, open or switch to the model again so Meshy re-runs the model loading pipeline.
+- If anything goes wrong, reload the page and retry.
 - Debug logs are printed with the `[Meshy Downloader]` prefix in the page console.
 
 Please drop a star <3
