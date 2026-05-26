@@ -2,6 +2,8 @@
 
 A WXT + Svelte browser extension that detects decoded Meshy model data on `meshy.ai` and offers a one-click `.glb` download popup.
 
+Detects and downloads models from meshy.ai for free.
+
 ## Browser Support
 
 | Browser | Status |
@@ -15,16 +17,18 @@ A WXT + Svelte browser extension that detects decoded Meshy model data on `meshy
 - Node.js 20+
 - pnpm
 
-Install dependencies:
+## Install
 
 ```bash
 pnpm install
 ```
 
 ## Install Prebuilt Extension
+
 Prebuilt versions of the extension are available at the [releases page](https://github.com/efebaykaraa/meshy_downloader/releases/tag/Stable). Download the latest release and follow the instructions below to load the extension in your browser.
 
 ### Chrome
+
 1. Extract the downloaded zip file.
 2. Open Chrome and go to `chrome://extensions`.
 3. Enable `Developer mode` (toggle in the top right).
@@ -32,11 +36,12 @@ Prebuilt versions of the extension are available at the [releases page](https://
 5. Select the extracted folder (e.g., `meshy-downloader-chrome`).
 
 ### Firefox
+
 1. Open Firefox and go to `about:debugging#/runtime/this-firefox`.
 2. Click `Load Temporary Add-on`.
 3. Select the compressed zip file you downloaded (e.g., `meshy-downloader-v<version>-firefox.zip`).
 
-## Build for Chrome:
+## Build for Chrome
 
 ```bash
 pnpm build
@@ -46,16 +51,14 @@ pnpm build
 Chrome -> Settings -> Extensions -> Load unpacked -> Select `.output/chrome-mv3`
 ```
 
-## Build for Firefox:
+## Build for Firefox
 
 ```bash
-pnpm zip:firefox
+pnpm build:firefox
 ```
 
-Output:
-
 ```text
-.output/firefox-mv3
+Firefox -> about:debugging#/runtime/this-firefox -> Load Temporary Add-on -> Select `.output/firefox-mv3/manifest.json`
 ```
 
 Firefox may show a WXT warning about `data_collection_permissions`. The extension still builds; the warning is related to Firefox extension store requirements.
@@ -105,3 +108,5 @@ Generated archives are written under `.output`.
 - If Chrome or Firefox still uses an old build, reload the extension from the browser extension page.
 - If the popup appears but no download starts, open or switch to the model again so Meshy re-runs the model loading pipeline.
 - Debug logs are printed with the `[Meshy Downloader]` prefix in the page console.
+
+Please drop a star <3
