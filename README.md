@@ -68,4 +68,5 @@ Firefox may show a WXT warning about `data_collection_permissions`. The extensio
 - If anything goes wrong, reload the page and retry.
 - Debug logs are printed with the `[Meshy Downloader]` prefix in the page console.
 
-Please drop a star <3
+# Please Drop A Star
+<img width="512" height="512" alt="Untitled" src="https://github.com/user-attachments/assets/b0c81c23-ac7d-4206-b8b2-0c35edec0b89" />
