@@ -5,6 +5,8 @@
 
 </div>
 
+---
+
 <div align="center">
 
 [![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
