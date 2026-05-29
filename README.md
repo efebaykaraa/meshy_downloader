@@ -10,7 +10,6 @@
 <div align="center">
 
 [![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
-[![Mozilla Add-on Rating](https://img.shields.io/amo/stars/meshy-downloader?style=for-the-badge&label=stars)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/reviews/)
 [![License](https://img.shields.io/github/license/efebaykaraa/meshy_downloader?style=for-the-badge)](LICENSE)
 
 [![Get the Add-on](https://img.shields.io/badge/GET%20THE-ADD--ON-1497D4?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
