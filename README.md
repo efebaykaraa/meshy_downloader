@@ -1,4 +1,9 @@
-# Meshy Downloader
+<div align="center">
+
+[![English](https://img.shields.io/badge/Language-English-blue?style=for-the-badge)](./README.md)
+[![Türkçe](https://img.shields.io/badge/Dil-T%C3%BCrk%C3%A7e-red?style=for-the-badge)](./README.tr.md)
+
+</div>
 
 <div align="center">
 
