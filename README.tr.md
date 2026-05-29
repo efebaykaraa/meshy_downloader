@@ -10,14 +10,7 @@
 <div align="center">
 
 [![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
-[![Mozilla Add-on Rating](https://img.shields.io/amo/stars/meshy-downloader?style=for-the-badge&label=stars)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/reviews/)
 [![License](https://img.shields.io/github/license/efebaykaraa/meshy_downloader?style=for-the-badge)](LICENSE)
-
-[![Mozilla Add-on Users](https://img.shields.io/amo/users/meshy-downloader?style=for-the-badge&label=users)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
-[![Mozilla Weekly Downloads](https://img.shields.io/amo/dw/meshy-downloader?style=for-the-badge&label=weekly%20downloads)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
-[![GitHub Stars](https://img.shields.io/github/stars/efebaykaraa/meshy_downloader?style=for-the-badge&logo=github)](https://github.com/efebaykaraa/meshy_downloader/stargazers)
-
----
 
 [![Eklentiyi Ekle](https://img.shields.io/badge/EKLENT%C4%B0Y%C4%B0-AL-1497D4?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
 
