@@ -1,7 +1,7 @@
 import { WebIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, EXTMeshoptCompression, KHRMeshQuantization } from '@gltf-transform/extensions';
-import { dequantize } from '@gltf-transform/functions';
 import { MeshoptDecoder } from 'meshoptimizer/decoder';
+import { dequantize } from './gltf-dequantize';
 import { isTripoModelUrl } from './website-state-machine';
 
 const EXT_MESHOPT_COMPRESSION = 'EXT_meshopt_compression';
