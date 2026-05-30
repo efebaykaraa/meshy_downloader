@@ -17,6 +17,9 @@ export type DownloaderState = {
 export type TabState = {
   tabId?: number;
   url?: string;
+  currentWebsiteId?: string;
+  currentWebsiteLabel?: string;
+  isSupportedWebsite: boolean;
   isMeshy: boolean;
   shouldRedirect: boolean;
   page?: PageState;
@@ -26,6 +29,8 @@ export type PageState = {
   injected: boolean;
   hasAuth: boolean;
   hasDecodedGlb: boolean;
+  hasActiveModel?: boolean;
+  activeModelUrl?: string;
   pendingDownload: boolean;
   lastAuth?: MeshyAuthPayload;
   lastGlbSize?: number;

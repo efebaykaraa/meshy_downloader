@@ -36,7 +36,9 @@
   async function downloadActiveTabMesh() {
     const result = await browser.runtime.sendMessage({ type: 'download-active-tab-mesh' });
     if (result?.ok) {
-      message = `Download started (${(result.byteLength / 1024 / 1024).toFixed(2)} MB).`;
+      message = result.byteLength
+        ? `Download started (${(result.byteLength / 1024 / 1024).toFixed(2)} MB).`
+        : 'Download started.';
     } else {
       message = result?.error ?? 'No decoded model is currently buffered. Click/open a model first.';
     }
@@ -65,7 +67,7 @@
     <p>You are not on Meshy.</p>
     <button on:click={openWorkspace}>Go to Meshy workspace</button>
   {:else}
-    <p class="good">You are on Meshy.</p>
+    <p class="good">You are on {tabState?.currentWebsiteLabel ?? 'a supported website'}.</p>
 
     {#if tabState?.page?.hasAuth}
       <section class="card">
@@ -86,9 +88,13 @@
       <p class="hint">No auth call captured yet. Click a model in the workspace; that triggers the loader worker authorization call.</p>
     {/if}
 
-    {#if tabState?.page?.hasDecodedGlb}
-      <button on:click={downloadActiveTabMesh}>Download buffered GLB</button>
-      <p class="hint">Buffered size: {((tabState.page.lastGlbSize ?? 0) / 1024 / 1024).toFixed(2)} MB</p>
+    {#if tabState?.page?.hasActiveModel ?? tabState?.page?.hasDecodedGlb}
+      <button on:click={downloadActiveTabMesh}>Download active GLB</button>
+      {#if tabState.page.lastGlbSize}
+        <p class="hint">Buffered size: {(tabState.page.lastGlbSize / 1024 / 1024).toFixed(2)} MB</p>
+      {:else}
+        <p class="hint">Active model URL detected.</p>
+      {/if}
     {:else if tabState?.page?.pendingDownload}
       <p class="hint">Waiting for worker decode result.</p>
     {:else}

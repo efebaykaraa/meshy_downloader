@@ -13,7 +13,11 @@
     "postinstall": "wxt prepare"
   },
   "dependencies": {
+    "@gltf-transform/core": "^4.3.0",
+    "@gltf-transform/extensions": "^4.3.0",
+    "@gltf-transform/functions": "^4.3.0",
     "@wxt-dev/module-svelte": "latest",
+    "meshoptimizer": "^1.1.1",
     "svelte": "latest"
   },
   "devDependencies": {

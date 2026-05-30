@@ -2,9 +2,8 @@ import { browser, createShadowRootUi, defineContentScript } from '#imports';
 import { mount, unmount } from 'svelte';
 import Overlay from './Overlay.svelte';
 import type { MeshyAuthPayload, PageState } from '../../src/lib/types';
+import { BRIDGE_SOURCE, CONTENT_SOURCE, findWebsiteState } from '../../src/lib/website-state-machine';
 
-const BRIDGE_SOURCE = 'meshy-downloader-main-world';
-const CONTENT_SOURCE = 'meshy-downloader-content-script';
 const GLB_MAGIC = 0x46546c67;
 const GLB_VERSION = 2;
 const GLB_JSON_CHUNK = 0x4e4f534a;
@@ -14,6 +13,12 @@ const COMPONENT_UNSIGNED_SHORT = 5123;
 const COMPONENT_UNSIGNED_INT = 5125;
 const COMPONENT_FLOAT = 5126;
 const KHR_MESH_QUANTIZATION = 'KHR_mesh_quantization';
+const websiteState = findWebsiteState(window.location.href);
+const overlayConfig = websiteState?.overlay ?? {
+  eventPrefix: 'meshy-downloader',
+  assetLabel: 'model',
+  fileFormat: 'GLB',
+};
 
 let injected = false;
 let lastAuth: MeshyAuthPayload | undefined;
@@ -110,6 +115,7 @@ function getPageState(): PageState {
     injected,
     hasAuth: Boolean(lastAuth),
     hasDecodedGlb: currentGlb !== null,
+    hasActiveModel: currentGlb !== null,
     pendingDownload,
     lastAuth,
     lastGlbSize: currentGlb?.byteLength,
@@ -138,7 +144,13 @@ function downloadBuffer(buffer: ArrayBuffer, filename = makeFileName()) {
 }
 
 function notifyOverlay(type: string, detail?: unknown) {
-  window.dispatchEvent(new CustomEvent(`meshy-downloader:${type}`, { detail }));
+  window.dispatchEvent(new CustomEvent(`${overlayConfig.eventPrefix}:${type}`, {
+    detail: {
+      assetLabel: overlayConfig.assetLabel,
+      fileFormat: overlayConfig.fileFormat,
+      ...(detail && typeof detail === 'object' ? detail : {}),
+    },
+  }));
 }
 
 function toArrayBuffer(value: unknown): ArrayBuffer | null {
@@ -646,7 +658,10 @@ export default defineContentScript({
       position: 'overlay',
       anchor: () => document.body ?? document.documentElement,
       onMount: (container) => {
-        const app = mount(Overlay, { target: container });
+        const app = mount(Overlay, {
+          target: container,
+          props: overlayConfig,
+        });
         return app;
       },
       onRemove: (app) => {
@@ -656,7 +671,7 @@ export default defineContentScript({
 
     ui.mount();
 
-    window.addEventListener('meshy-downloader:user-choice', (event) => {
+    window.addEventListener(`${overlayConfig.eventPrefix}:user-choice`, (event) => {
       const choice = (event as CustomEvent).detail;
       void handleUserChoice(choice);
     });

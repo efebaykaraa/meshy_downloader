@@ -25,7 +25,16 @@ export default defineConfig({
     name: 'Meshy Downloader',
     description: 'Downloads meshy models.',
     permissions: ['tabs', 'storage', 'activeTab'],
-    host_permissions: ['https://www.meshy.ai/*'],
+    content_security_policy: {
+      extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    },
+    host_permissions: [
+      'https://www.meshy.ai/*',
+      'https://www.tripo3d.ai/*',
+      'https://tripo3d.ai/*',
+      'https://studio.tripo3d.ai/*',
+      'https://tripo-data.rg1.data.tripo3d.com/*',
+    ],
     browser_specific_settings: {
       gecko: {
         id: 'meshy-downloader@efebaykaraa.github.io',
