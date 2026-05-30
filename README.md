@@ -9,31 +9,57 @@
 
 <div align="center">
 
-[![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
+[![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge\&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
 [![License](https://img.shields.io/github/license/efebaykaraa/meshy_downloader?style=for-the-badge)](LICENSE)
 
-[![Get the Add-on](https://img.shields.io/badge/GET%20THE-ADD--ON-1497D4?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
+[![Get the Add-on](https://img.shields.io/badge/GET%20THE-ADD--ON-1497D4?style=for-the-badge\&logo=firefoxbrowser\&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
 
 </div>
 
 ---
 
-A WXT + Svelte browser extension that detects decoded Meshy model data on `meshy.ai` and offers a one-click `.glb` download popup.
+# Meshy Downloader
 
-Detects and downloads models from meshy.ai for free.
+A WXT + Svelte browser extension that detects downloadable 3D models on supported AI model-generation websites and offers a one-click `.glb` download popup.
+
+Meshy Downloader currently supports:
+
+* `meshy.ai`
+* `tripo3d.ai`
+* `studio.tripo3d.ai`
+
+The extension started as a Meshy-only downloader, because apparently every website needs its own strange little way of serving models. It now uses a provider-based architecture so each supported website can have isolated detection, processing, and download behavior.
+
+## Features
+
+* Detects and downloads models from Meshy.
+* Detects Tripo3D `.glb` model requests from `tripo-data.rg1.data.tripo3d.com`.
+* Tracks the newest valid Tripo3D `tripo_pbr_model_*_meshopt.glb` request as the active downloadable model.
+* Ignores Tripo3D preview and static assets such as `.webp`, `.jpg`, `.png`, `.js`, `.css`, and `.wasm`.
+* Processes Tripo3D models into cleaned `.glb` files before saving.
+* Keeps Meshy and Tripo3D logic isolated through provider-specific state handling.
+* Uses a shared popup and overlay UI for supported providers.
+
+## Supported Websites
+
+| Website             | Status      | Notes                                          |
+| ------------------- | ----------- | ---------------------------------------------- |
+| `meshy.ai`          | ✅ Supported | Existing Meshy detection and download behavior |
+| `tripo3d.ai`        | ✅ Supported | Detects valid Tripo3D `.glb` model requests    |
+| `studio.tripo3d.ai` | ✅ Supported | Detects valid Tripo3D `.glb` model requests    |
 
 ## Browser Support
 
-| Browser | Status |
-| --- | --- |
-| Chrome | ✅ Works |
-| Firefox | ✅ Works |
-| Safari | ⚪ Not tested |
+| Browser | Status       |
+| ------- | ------------ |
+| Chrome  | ✅ Works      |
+| Firefox | ✅ Works      |
+| Safari  | ⚪ Not tested |
 
 ## Requirements
 
-- Node.js 20+
-- pnpm
+* Node.js 20+
+* pnpm
 
 ## Install
 
@@ -43,7 +69,9 @@ pnpm install
 
 ## Install Prebuilt Extension
 
-Prebuilt versions of the extension are available at the [releases page](https://github.com/efebaykaraa/meshy_downloader/releases/tag/Stable). Download the latest release and follow the instructions below to load the extension in your browser.
+Prebuilt versions of the extension are available on the [releases page](https://github.com/efebaykaraa/meshy_downloader/releases/tag/Stable).
+
+Download the latest release and follow the instructions below to load the extension in your browser.
 
 ### Chrome
 
@@ -85,10 +113,87 @@ Firefox -> about:debugging#/runtime/this-firefox -> Load Temporary Add-on -> Sel
 
 Firefox may show a WXT warning about `data_collection_permissions`. The extension still builds; the warning is related to Firefox extension store requirements.
 
+## How It Works
+
+Meshy Downloader watches network activity on supported websites and detects valid model files requested by the page.
+
+For Tripo3D, the extension only uses model URLs that the page has already requested naturally. It does not modify, forge, or regenerate signed URLs.
+
+When a valid Tripo3D model is detected, the extension stores the newest matching model request as the active downloadable model. The model is processed only after the user clicks the download button.
+
+## Tripo3D Model Processing
+
+Tripo3D models are cleaned before download.
+
+The extension:
+
+1. Fetches the active detected `.glb` URL.
+
+2. Decodes `EXT_meshopt_compression` using `meshoptimizer`.
+
+3. Dequantizes `KHR_mesh_quantization` using `gltf-transform`.
+
+4. Writes a cleaned GLB file, for example:
+
+   ```text
+   tripo_pbr_model_<id>_cleaned.glb
+   ```
+
+5. Validates that the cleaned output:
+
+   * is a valid GLB file,
+   * contains meshes,
+   * no longer requires `EXT_meshopt_compression`,
+   * no longer requires `KHR_mesh_quantization`.
+
+This processing is only applied to Tripo3D models. Meshy downloads keep their existing behavior.
+
+## Project Structure
+
+Important files:
+
+```text
+src/lib/website-state-machine.ts
+src/lib/tripo-processing.ts
+entrypoints/tripo.content/index.ts
+entrypoints/tripo.content/Overlay.svelte
+entrypoints/shared/OverlayShell.svelte
+entrypoints/background.ts
+entrypoints/popup/App.svelte
+wxt.config.ts
+```
+
+## Dependencies
+
+Main model-processing dependencies:
+
+* `@gltf-transform/core`
+* `@gltf-transform/extensions`
+* `@gltf-transform/functions`
+* `meshoptimizer`
+
 ## Troubleshooting
 
-- If anything goes wrong, reload the page and retry.
-- Debug logs are printed with the `[Meshy Downloader]` prefix in the page console.
+* If anything goes wrong, reload the page and retry.
+* Make sure the model is visible or has been loaded by the website before trying to download it.
+* On Tripo3D, switch to the model you want before clicking download. The extension tracks the newest valid visible model request.
+* Debug logs are printed with the `[Meshy Downloader]` prefix in the page console.
+
+## Validation
+
+Before releasing, check that:
+
+* Meshy still detects and downloads models as before.
+* Tripo3D detects only valid `tripo_pbr_model_*_meshopt.glb` URLs.
+* Switching between multiple Tripo3D models updates the active model.
+* Tripo3D downloads produce cleaned GLB files that open in Blender or a standard GLB viewer.
+* Tripo3D cleanup does not run on Meshy or unrelated websites.
+
+Run:
+
+```bash
+pnpm build
+```
 
 ## Support
 
@@ -96,8 +201,8 @@ If this extension helped you, consider starring the repository or leaving a revi
 
 <div align="center">
 
-[![Star on GitHub](https://img.shields.io/badge/Star%20on-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/efebaykaraa/meshy_downloader/stargazers)
-[![Review on Mozilla](https://img.shields.io/badge/Review%20on-Mozilla-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/reviews/)
+[![Star on GitHub](https://img.shields.io/badge/Star%20on-GitHub-181717?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/efebaykaraa/meshy_downloader/stargazers)
+[![Review on Mozilla](https://img.shields.io/badge/Review%20on-Mozilla-FF7139?style=for-the-badge\&logo=firefoxbrowser\&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/reviews/)
 
 </div>
 
