@@ -9,10 +9,12 @@
 
 <div align="center">
 
-[![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge\&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
+[![Mozilla Add-on Version](https://img.shields.io/amo/v/meshy-downloader?style=for-the-badge&label=mozilla%20add-on)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
+[![Chrome Web Store Version](https://img.shields.io/chrome-web-store/v/gmiabmjbibonhgpdbgoinabillaeonpk?style=for-the-badge&label=chrome%20web%20store)](https://chromewebstore.google.com/detail/meshy-downloader/gmiabmjbibonhgpdbgoinabillaeonpk)
 [![License](https://img.shields.io/github/license/efebaykaraa/meshy_downloader?style=for-the-badge)](LICENSE)
 
-[![Get the Add-on](https://img.shields.io/badge/GET%20THE-ADD--ON-1497D4?style=for-the-badge\&logo=firefoxbrowser\&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
+[![Get the Firefox Add-on](https://img.shields.io/badge/GET%20THE-FIREFOX%20ADD--ON-1497D4?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/)
+[![Get it on Chrome](https://img.shields.io/badge/GET%20IT%20ON-CHROME-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/meshy-downloader/gmiabmjbibonhgpdbgoinabillaeonpk)
 
 </div>
 
@@ -39,22 +41,23 @@ The extension started as a Meshy-only downloader, because apparently every websi
 * Processes Tripo3D models into cleaned `.glb` files before saving.
 * Keeps Meshy and Tripo3D logic isolated through provider-specific state handling.
 * Uses a shared popup and overlay UI for supported providers.
+* Available on Mozilla Add-ons and the Chrome Web Store.
 
 ## Supported Websites
 
-| Website             | Status      | Notes                                          |
-| ------------------- | ----------- | ---------------------------------------------- |
-| `meshy.ai`          | ✅ Supported | Existing Meshy detection and download behavior |
-| `tripo3d.ai`        | ✅ Supported | Detects valid Tripo3D `.glb` model requests    |
-| `studio.tripo3d.ai` | ✅ Supported | Detects valid Tripo3D `.glb` model requests    |
+| Website | Status | Notes |
+| --- | --- | --- |
+| `meshy.ai` | ✅ Supported | Existing Meshy detection and download behavior |
+| `tripo3d.ai` | ✅ Supported | Detects valid Tripo3D `.glb` model requests |
+| `studio.tripo3d.ai` | ✅ Supported | Detects valid Tripo3D `.glb` model requests |
 
 ## Browser Support
 
-| Browser | Status       |
-| ------- | ------------ |
-| Chrome  | ✅ Works      |
-| Firefox | ✅ Works      |
-| Safari  | ⚪ Not tested |
+| Browser | Status | Install |
+| --- | --- | --- |
+| Chrome | ✅ Works | [Chrome Web Store](https://chromewebstore.google.com/detail/meshy-downloader/gmiabmjbibonhgpdbgoinabillaeonpk) |
+| Firefox | ✅ Works | [Mozilla Add-ons](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/) |
+| Safari | ⚪ Not tested | Not available |
 
 ## Requirements
 
@@ -67,11 +70,21 @@ The extension started as a Meshy-only downloader, because apparently every websi
 pnpm install
 ```
 
-## Install Prebuilt Extension
+## Install from Browser Stores
+
+### Chrome
+
+Install the published Chrome version from the [Chrome Web Store](https://chromewebstore.google.com/detail/meshy-downloader/gmiabmjbibonhgpdbgoinabillaeonpk).
+
+### Firefox
+
+Install the published Firefox version from the [Mozilla Add-ons page](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/).
+
+## Install Prebuilt Extension Manually
 
 Prebuilt versions of the extension are available on the [releases page](https://github.com/efebaykaraa/meshy_downloader/releases/tag/Stable).
 
-Download the latest release and follow the instructions below to load the extension in your browser.
+Download the latest release and follow the instructions below to load the extension manually in your browser.
 
 ### Chrome
 
@@ -82,10 +95,6 @@ Download the latest release and follow the instructions below to load the extens
 5. Select the extracted folder, for example `meshy-downloader-chrome`.
 
 ### Firefox
-
-You can install the published version from the [Mozilla Add-ons page](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/).
-
-For manual installation:
 
 1. Open Firefox and go to `about:debugging#/runtime/this-firefox`.
 2. Click `Load Temporary Add-on`.
@@ -188,21 +197,24 @@ Before releasing, check that:
 * Switching between multiple Tripo3D models updates the active model.
 * Tripo3D downloads produce cleaned GLB files that open in Blender or a standard GLB viewer.
 * Tripo3D cleanup does not run on Meshy or unrelated websites.
+* Chrome and Firefox builds both work before publishing.
 
 Run:
 
 ```bash
 pnpm build
+pnpm build:firefox
 ```
 
 ## Support
 
-If this extension helped you, consider starring the repository or leaving a review on Mozilla Add-ons.
+If this extension helped you, consider starring the repository or leaving a review on Mozilla Add-ons or the Chrome Web Store.
 
 <div align="center">
 
-[![Star on GitHub](https://img.shields.io/badge/Star%20on-GitHub-181717?style=for-the-badge\&logo=github\&logoColor=white)](https://github.com/efebaykaraa/meshy_downloader/stargazers)
-[![Review on Mozilla](https://img.shields.io/badge/Review%20on-Mozilla-FF7139?style=for-the-badge\&logo=firefoxbrowser\&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/reviews/)
+[![Star on GitHub](https://img.shields.io/badge/Star%20on-GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/efebaykaraa/meshy_downloader/stargazers)
+[![Review on Mozilla](https://img.shields.io/badge/Review%20on-Mozilla-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/en-US/android/addon/meshy-downloader/reviews/)
+[![Review on Chrome](https://img.shields.io/badge/Review%20on-Chrome%20Web%20Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/meshy-downloader/gmiabmjbibonhgpdbgoinabillaeonpk)
 
 </div>
 
