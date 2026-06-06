@@ -28,14 +28,13 @@ Meshy Downloader şu anda şunları destekler:
 
 * `meshy.ai`
 * `tripo3d.ai`
-* `studio.tripo3d.ai`
 
 Eklenti başlangıçta yalnızca Meshy için yapılmıştı, çünkü belli ki her site model dosyalarını servis etmek için kendi küçük garip yöntemini icat etmek zorunda. Artık sağlayıcı tabanlı bir mimari kullanıyor; böylece her desteklenen site için algılama, işleme ve indirme davranışı ayrı tutulabiliyor.
 
 ## Özellikler
 
 * Meshy modellerini algılar ve indirir.
-* `tripo-data.rg1.data.tripo3d.com` üzerinden gelen Tripo3D `.glb` model isteklerini algılar.
+* Tripo3D `.glb` model isteklerini algılar.
 * En yeni geçerli Tripo3D `tripo_pbr_model_*_meshopt.glb` isteğini aktif indirilebilir model olarak izler.
 * `.webp`, `.jpg`, `.png`, `.js`, `.css` ve `.wasm` gibi Tripo3D önizleme ve statik dosyalarını yok sayar.
 * Tripo3D modellerini kaydetmeden önce temizlenmiş `.glb` dosyalarına dönüştürür.
@@ -49,7 +48,6 @@ Eklenti başlangıçta yalnızca Meshy için yapılmıştı, çünkü belli ki h
 | --- | --- | --- |
 | `meshy.ai` | ✅ Destekleniyor | Mevcut Meshy algılama ve indirme davranışı |
 | `tripo3d.ai` | ✅ Destekleniyor | Geçerli Tripo3D `.glb` model isteklerini algılar |
-| `studio.tripo3d.ai` | ✅ Destekleniyor | Geçerli Tripo3D `.glb` model isteklerini algılar |
 
 ## Tarayıcı Desteği
 
