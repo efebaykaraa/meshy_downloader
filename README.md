@@ -28,14 +28,13 @@ Meshy Downloader currently supports:
 
 * `meshy.ai`
 * `tripo3d.ai`
-* `studio.tripo3d.ai`
 
 The extension started as a Meshy-only downloader, because apparently every website needs its own strange little way of serving models. It now uses a provider-based architecture so each supported website can have isolated detection, processing, and download behavior.
 
 ## Features
 
 * Detects and downloads models from Meshy.
-* Detects Tripo3D `.glb` model requests from `tripo-data.rg1.data.tripo3d.com`.
+* Detects Tripo3D `.glb` model requests.
 * Tracks the newest valid Tripo3D `tripo_pbr_model_*_meshopt.glb` request as the active downloadable model.
 * Ignores Tripo3D preview and static assets such as `.webp`, `.jpg`, `.png`, `.js`, `.css`, and `.wasm`.
 * Processes Tripo3D models into cleaned `.glb` files before saving.
@@ -49,7 +48,6 @@ The extension started as a Meshy-only downloader, because apparently every websi
 | --- | --- | --- |
 | `meshy.ai` | ✅ Supported | Existing Meshy detection and download behavior |
 | `tripo3d.ai` | ✅ Supported | Detects valid Tripo3D `.glb` model requests |
-| `studio.tripo3d.ai` | ✅ Supported | Detects valid Tripo3D `.glb` model requests |
 
 ## Browser Support
 
