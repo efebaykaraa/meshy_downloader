@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { browser } from '#imports';
   import { onDestroy, onMount } from 'svelte';
 
   type OverlayChoice = 'yes' | 'no';
-  type OverlayPhase = 'ready' | 'downloading' | 'pending' | 'processing' | 'error';
+  type OverlayPhase = 'ready' | 'downloading' | 'pending' | 'processing' | 'github' | 'error';
   type OverlayEventDetail = {
     byteLength?: number;
     error?: string;
@@ -28,6 +29,7 @@
   let errorMessage: string | undefined;
 
   const EXIT_DURATION = 260;
+  const GITHUB_REPOSITORY_URL = 'https://github.com/efebaykaraa/meshy_downloader';
 
   $: events = {
     modelChanged: `${eventPrefix}:model-changed`,
@@ -93,6 +95,46 @@
     emitChoice('no');
   }
 
+  async function showGithubPromptOrDownloadStatus() {
+    try {
+      const state = await browser.runtime.sendMessage({ type: 'get-state' });
+      phase = state?.githubStarPromptHidden ? 'downloading' : 'github';
+    } catch {
+      phase = 'github';
+    }
+
+    errorMessage = undefined;
+    clearLeaveTimer();
+    leaving = false;
+    visible = true;
+
+    if (phase === 'downloading') {
+      scheduleAutoHide();
+    } else {
+      clearHideTimer();
+    }
+  }
+
+  async function openGithubRepository() {
+    try {
+      await browser.runtime.sendMessage({ type: 'open-github-repository' });
+    } catch {
+      window.open(GITHUB_REPOSITORY_URL, '_blank', 'noopener,noreferrer');
+    }
+
+    hideOverlay();
+  }
+
+  async function neverShowGithubPromptAgain() {
+    try {
+      await browser.runtime.sendMessage({ type: 'set-github-star-prompt-hidden', value: true });
+    } catch {
+      // The prompt should still get out of the user's way if extension messaging fails.
+    }
+
+    hideOverlay();
+  }
+
   function onModelChanged(event: Event) {
     const generation = (event as CustomEvent<OverlayEventDetail>).detail.generation;
     if (generation == null) return;
@@ -126,12 +168,7 @@
   function onDownloadStarted(event: Event) {
     const detail = (event as CustomEvent<OverlayEventDetail>).detail;
     lastAssetSize = detail.byteLength ?? lastAssetSize;
-    phase = 'downloading';
-    errorMessage = undefined;
-    clearLeaveTimer();
-    leaving = false;
-    visible = true;
-    scheduleAutoHide();
+    void showGithubPromptOrDownloadStatus();
   }
 
   function onDownloadProcessing() {
@@ -209,6 +246,14 @@
           assetSizeText={assetSizeText}
           hasAssetSize={hasAssetSize}
         />
+      {:else if phase === 'github'}
+        <h2>Download complete</h2>
+        <p>This is a voluntary project that took weeks. Only way you may support me is to drop a star on github.</p>
+        <div class="actions three-actions">
+          <button on:click={openGithubRepository}>Go to GitHub</button>
+          <button class="secondary" on:click={hideOverlay}>Close</button>
+          <button class="secondary" on:click={neverShowGithubPromptAgain}>Never show again</button>
+        </div>
       {:else if phase === 'error'}
         <slot
           name="error"

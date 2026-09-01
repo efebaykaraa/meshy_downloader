@@ -5,6 +5,7 @@ const KEY = 'meshy-downloader-state';
 
 const DEFAULT_STATE: DownloaderState = {
   neverShowAgain: false,
+  githubStarPromptHidden: false,
   downloadCount: 0,
 };
 

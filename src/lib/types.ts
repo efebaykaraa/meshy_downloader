@@ -8,6 +8,7 @@ export type MeshyAuthPayload = {
 
 export type DownloaderState = {
   neverShowAgain: boolean;
+  githubStarPromptHidden?: boolean;
   lastSeenUrl?: string;
   lastActionAt?: number;
   lastAuth?: MeshyAuthPayload;

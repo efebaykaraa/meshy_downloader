@@ -58,12 +58,20 @@ export default defineBackground(() => {
       return setState({ neverShowAgain: Boolean(message.value), lastActionAt: Date.now() });
     }
 
+    if (message.type === 'set-github-star-prompt-hidden') {
+      return setState({ githubStarPromptHidden: Boolean(message.value), lastActionAt: Date.now() });
+    }
+
     if (message.type === 'reset-state') {
       return resetState();
     }
 
     if (message.type === 'open-workspace') {
       return browser.tabs.create({ url: findWebsiteState(sender.tab?.url)?.workspaceUrl ?? 'https://www.meshy.ai/workspace' });
+    }
+
+    if (message.type === 'open-github-repository') {
+      return browser.tabs.create({ url: 'https://github.com/efebaykaraa/meshy_downloader' });
     }
 
     if (message.type === 'check-current-tab' || message.type === 'get-active-tab-state') {
