@@ -10,6 +10,7 @@ export type WebsiteBridgeEvent = {
     | 'auth-captured'
     | 'model-json-detected'
     | 'model-binary-detected'
+    | 'texture-detected'
     | 'tripo-glb-url-detected'
     | 'glb-ready'
     | 'installed';
@@ -144,6 +145,22 @@ function createMeshyState(): WebsiteState {
           console.debug('[Meshy Downloader] Meshy model binary URL detected', url.href);
           events.push({
             type: 'model-binary-detected',
+            payload: {
+              url: url.href,
+              capturedAt: Date.now(),
+              pageUrl,
+            },
+          });
+        }
+
+        // Texture fallback: Meshy serves model textures as separate texture_*.png
+        // files (e.g. texture_0.png). Track them so the content script can grab one
+        // when the downloaded GLB has no embedded textures.
+        const filename = url.pathname.split('/').pop() ?? '';
+        if (/^texture_[^/]*\.png/i.test(filename)) {
+          console.debug('[Meshy Downloader] Meshy texture URL detected', url.href);
+          events.push({
+            type: 'texture-detected',
             payload: {
               url: url.href,
               capturedAt: Date.now(),

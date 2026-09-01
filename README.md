@@ -33,6 +33,7 @@ The extension started as a Meshy-only downloader, because apparently every websi
 ## Features
 
 * Detects and downloads models from Meshy.
+* Falls back to embedding a captured `texture_*.png` into the GLB when the Meshy model has no embedded textures.
 * Detects Tripo3D `.glb` model requests from `tripo-data.rg1.data.tripo3d.com`.
 * Tracks the newest valid Tripo3D `tripo_pbr_model_*_meshopt.glb` request as the active downloadable model.
 * Ignores Tripo3D preview and static assets such as `.webp`, `.jpg`, `.png`, `.js`, `.css`, and `.wasm`.

@@ -33,6 +33,7 @@ Eklenti başlangıçta yalnızca Meshy için geliştirilmişti. Artık sağlayı
 ## Özellikler
 
 * Meshy modellerini algılar ve indirir.
+* Meshy GLB'sinde gömülü texture olmadığında, yakalanan `texture_*.png` dosyalarından birini GLB'nin içine gömer.
 * `tripo-data.rg1.data.tripo3d.com` üzerinden gelen Tripo3D `.glb` model isteklerini algılar.
 * En yeni geçerli Tripo3D `tripo_pbr_model_*_meshopt.glb` isteğini aktif indirilebilir model olarak takip eder.
 * `.webp`, `.jpg`, `.png`, `.js`, `.css` ve `.wasm` gibi Tripo3D önizleme ve statik dosyalarını yok sayar.

@@ -182,6 +182,25 @@ export function installMeshyMainWorldHook() {
     return nativeXhrOpen.apply(this, arguments as unknown as Parameters<XMLHttpRequest['open']>);
   };
 
+  const imageSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+  if (imageSrcDescriptor?.set) {
+    const nativeImageSrcSetter = imageSrcDescriptor.set;
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      ...imageSrcDescriptor,
+      set(value: string) {
+        try {
+          // Meshy's viewer may load texture_*.png files through <img> elements,
+          // which bypass the fetch/XHR patches.
+          detectRequest(value);
+        } catch (error) {
+          console.warn('[Meshy Downloader] Failed to inspect image src', error);
+        }
+
+        return nativeImageSrcSetter.call(this, value);
+      },
+    });
+  }
+
   function WorkerWrapper(this: Worker, scriptURL: string | URL, options?: WorkerOptions): Worker {
     const worker = new NativeWorker(scriptURL, options);
     attachWorkerListener(worker);

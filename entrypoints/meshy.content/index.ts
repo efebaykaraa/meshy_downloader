@@ -43,6 +43,12 @@ let currentJsonModelKey: string | undefined;
 /** Cache of GLBs by model key so revisiting a model doesn't require re-decode. */
 const glbCache = new Map<string, { buffer: ArrayBuffer; byteLength: number }>();
 
+/** Texture URLs (texture_*.png) captured per model key. */
+const textureUrlsByModelKey = new Map<string, string[]>();
+
+/** Most recently captured texture URL, used when the model key is unknown. */
+let lastTextureUrl: string | undefined;
+
 type GltfAccessor = {
   bufferView?: number;
   byteOffset?: number;
@@ -74,15 +80,31 @@ type GltfBufferView = {
   target?: number;
 };
 
+type GltfPbrMetallicRoughness = {
+  baseColorTexture?: { index: number };
+  baseColorFactor?: number[];
+  metallicFactor?: number;
+  roughnessFactor?: number;
+};
+
+type GltfMaterial = {
+  name?: string;
+  pbrMetallicRoughness?: GltfPbrMetallicRoughness;
+};
+
 type GltfDocument = {
   accessors?: GltfAccessor[];
   buffers?: Array<{ byteLength: number }>;
   bufferViews?: GltfBufferView[];
   extensionsRequired?: string[];
   extensionsUsed?: string[];
+  images?: Array<{ bufferView?: number; mimeType?: string; uri?: string }>;
+  textures?: Array<{ source?: number; sampler?: number }>;
+  materials?: GltfMaterial[];
   meshes?: Array<{
     primitives?: Array<{
       attributes?: Record<string, number>;
+      material?: number;
     }>;
   }>;
 };
@@ -128,8 +150,8 @@ function makeFileName() {
   return `meshy-model-${date}.glb`;
 }
 
-function downloadBuffer(buffer: ArrayBuffer, filename = makeFileName()) {
-  const blob = new Blob([buffer], { type: 'model/gltf-binary' });
+function downloadBuffer(buffer: ArrayBuffer, filename = makeFileName(), mimeType = 'model/gltf-binary') {
+  const blob = new Blob([buffer], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -453,6 +475,189 @@ async function handleAuthCaptured(auth: MeshyAuthPayload) {
 }
 
 /**
+ * Called when a texture_*.png URL is detected (fetch, XHR, or <img>).
+ * Textures live in the same directory as the model, so they are correlated
+ * with the model via getModelKey just like model.json / model.meshy.
+ */
+function handleTextureDetected(payload: { url?: string }) {
+  const url = typeof payload.url === 'string' ? payload.url : undefined;
+  if (!url) return;
+
+  const modelKey = getModelKey(url);
+  if (modelKey) {
+    const known = textureUrlsByModelKey.get(modelKey) ?? [];
+    if (!known.includes(url)) {
+      known.push(url);
+      textureUrlsByModelKey.set(modelKey, known);
+    }
+  }
+  lastTextureUrl = url;
+
+  console.debug('[Meshy Downloader] texture URL detected', { url, modelKey });
+}
+
+function glbHasEmbeddedTextures(buffer: ArrayBuffer) {
+  try {
+    const parsed = parseGlb(buffer);
+    return (parsed?.gltf.textures?.length ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+function looksLikePng(buffer: ArrayBuffer) {
+  if (buffer.byteLength < 8) return false;
+  const bytes = new Uint8Array(buffer, 0, 8);
+  return bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47
+    && bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a;
+}
+
+function pickTextureUrl(modelKey: string | undefined) {
+  const forModel = modelKey ? textureUrlsByModelKey.get(modelKey) : undefined;
+  if (forModel && forModel.length > 0) return forModel[0];
+  return lastTextureUrl;
+}
+
+/**
+ * Embeds a PNG texture into a GLB as a baseColorTexture.
+ * Appends the PNG bytes to the BIN chunk (4-byte aligned), registers an
+ * image + texture, and applies it to the meshes: primitives without a
+ * material get a new material, existing materials get a baseColorTexture.
+ * Returns null when the GLB cannot be parsed or repacked.
+ */
+function embedTextureInGlb(glbBuffer: ArrayBuffer, texturePng: Uint8Array): ArrayBuffer | null {
+  try {
+    const parsed = parseGlb(glbBuffer);
+    if (!parsed) return null;
+
+    const { gltf, bin } = parsed;
+
+    // Append the PNG bytes to the BIN chunk (4-byte aligned).
+    const byteOffset = align4(bin.byteLength);
+    const paddedTextureLength = align4(texturePng.byteLength);
+    const nextBin = new Uint8Array(byteOffset + paddedTextureLength);
+    nextBin.set(bin, 0);
+    nextBin.set(texturePng, byteOffset);
+
+    const bufferViews = gltf.bufferViews ?? [];
+    bufferViews.push({
+      buffer: 0,
+      byteOffset,
+      byteLength: texturePng.byteLength,
+    });
+    gltf.bufferViews = bufferViews;
+
+    const images = gltf.images ?? [];
+    images.push({ bufferView: bufferViews.length - 1, mimeType: 'image/png' });
+    gltf.images = images;
+
+    const textures = gltf.textures ?? [];
+    textures.push({ source: images.length - 1 });
+    gltf.textures = textures;
+    const textureIndex = textures.length - 1;
+
+    const materials = gltf.materials ?? [];
+    let newMaterialIndex: number | undefined;
+
+    for (const mesh of gltf.meshes ?? []) {
+      for (const primitive of mesh.primitives ?? []) {
+        if (primitive.material == null) {
+          if (newMaterialIndex == null) {
+            materials.push({
+              name: 'texture',
+              pbrMetallicRoughness: {
+                baseColorTexture: { index: textureIndex },
+                metallicFactor: 0,
+                roughnessFactor: 1,
+              },
+            });
+            newMaterialIndex = materials.length - 1;
+          }
+          primitive.material = newMaterialIndex;
+        } else {
+          const material = materials[primitive.material];
+          if (material) {
+            material.pbrMetallicRoughness ??= {};
+            material.pbrMetallicRoughness.baseColorTexture = { index: textureIndex };
+          }
+        }
+      }
+    }
+    gltf.materials = materials;
+
+    gltf.buffers ??= [{ byteLength: 0 }];
+    gltf.buffers[0].byteLength = nextBin.byteLength;
+
+    return buildGlb(gltf, nextBin);
+  } catch (error) {
+    console.warn('[Meshy Downloader] Failed to embed texture into GLB', error);
+    return null;
+  }
+}
+
+async function fetchTexturePng(url: string) {
+  const response = await fetch(url, { credentials: 'omit' });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch texture (${response.status} ${response.statusText}).`);
+  }
+  const buffer = await response.arrayBuffer();
+  if (!looksLikePng(buffer)) {
+    throw new Error('Fetched texture does not look like a PNG.');
+  }
+  return new Uint8Array(buffer);
+}
+
+/**
+ * Downloads the current GLB. When it has no embedded textures, grabs one of the
+ * captured texture_*.png files and embeds it into the GLB before saving.
+ */
+async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byteLength: number; modelKey: string }) {
+  if (glbHasEmbeddedTextures(glb.buffer)) {
+    console.debug('[Meshy Downloader] GLB has embedded textures — texture fallback skipped');
+    downloadBuffer(glb.buffer);
+    return;
+  }
+
+  const textureUrl = pickTextureUrl(glb.modelKey);
+  if (!textureUrl) {
+    console.debug('[Meshy Downloader] GLB has no embedded textures and no texture_*.png URL was captured — downloading as-is');
+    downloadBuffer(glb.buffer);
+    return;
+  }
+
+  console.debug('[Meshy Downloader] GLB has no embedded textures — embedding texture fallback', textureUrl);
+
+  try {
+    const texturePng = await fetchTexturePng(textureUrl);
+    const embedded = embedTextureInGlb(glb.buffer, texturePng);
+    if (!embedded) {
+      throw new Error('Failed to embed the texture into the GLB.');
+    }
+    console.debug('[Meshy Downloader] Texture embedded into GLB', {
+      url: textureUrl,
+      textureByteLength: texturePng.byteLength,
+      originalByteLength: glb.byteLength,
+      embeddedByteLength: embedded.byteLength,
+    });
+    downloadBuffer(embedded);
+    notifyOverlay('texture-fallback-embedded', { url: textureUrl, byteLength: embedded.byteLength, modelKey: glb.modelKey });
+  } catch (error) {
+    console.warn('[Meshy Downloader] Texture fallback failed — downloading GLB without texture', error);
+    downloadBuffer(glb.buffer);
+  }
+}
+
+/** Downloads the current GLB, embedding a texture_*.png fallback when needed. */
+function startModelDownload(glb: { buffer: ArrayBuffer; byteLength: number; modelKey: string }) {
+  notifyOverlay('download-started', {
+    byteLength: glb.byteLength,
+    generation: modelGeneration,
+    modelKey: glb.modelKey,
+  });
+  void downloadModelWithTextureFallback(glb);
+}
+
+/**
  * Called when model.json (or mesh.json) is fetched — this signals the UI.
  * If the GLB for this model is already cached, show it immediately.
  * If not, the UI will show once handleGlbReady fires.
@@ -495,12 +700,7 @@ function handleModelJsonDetected(payload: { url?: string }) {
 
     if (pendingDownload) {
       pendingDownload = false;
-      downloadBuffer(currentGlb.buffer);
-      notifyOverlay('download-started', {
-        byteLength: currentGlb.byteLength,
-        generation: modelGeneration,
-        modelKey: currentJsonModelKey,
-      });
+      startModelDownload(currentGlb);
     }
     return;
   }
@@ -515,12 +715,7 @@ function handleModelJsonDetected(payload: { url?: string }) {
 
     if (pendingDownload) {
       pendingDownload = false;
-      downloadBuffer(currentGlb.buffer);
-      notifyOverlay('download-started', {
-        byteLength: currentGlb.byteLength,
-        generation: modelGeneration,
-        modelKey: currentJsonModelKey,
-      });
+      startModelDownload(currentGlb);
     }
   }
 }
@@ -571,8 +766,7 @@ function handleGlbReady(buffer: ArrayBuffer, byteLength: number, sourceUrl?: str
 
   if (pendingDownload) {
     pendingDownload = false;
-    downloadBuffer(normalizedBuffer);
-    notifyOverlay('download-started', { byteLength: normalizedByteLength, generation: modelGeneration, modelKey });
+    startModelDownload(currentGlb);
   }
 }
 
@@ -591,12 +785,7 @@ async function handleUserChoice(choice: 'yes' | 'no' | 'never') {
       }
       console.debug('[Meshy Downloader] User chose to download the model');
       pendingDownload = false;
-      downloadBuffer(currentGlb.buffer);
-      notifyOverlay('download-started', {
-        byteLength: currentGlb.byteLength,
-        generation: modelGeneration,
-        modelKey: currentGlb.modelKey,
-      });
+      startModelDownload(currentGlb);
       break;
     case 'no':
       pendingDownload = false;
@@ -637,6 +826,11 @@ export default defineContentScript({
 
       if (data.type === 'model-json-detected') {
         handleModelJsonDetected(data.payload as { url?: string });
+        return;
+      }
+
+      if (data.type === 'texture-detected') {
+        handleTextureDetected(data.payload as { url?: string });
         return;
       }
 
@@ -687,7 +881,7 @@ export default defineContentScript({
         if (!currentGlb) {
           return Promise.resolve({ ok: false, error: 'No decoded GLB is currently buffered. Click/open a model first.' });
         }
-        downloadBuffer(currentGlb.buffer);
+        startModelDownload(currentGlb);
         return Promise.resolve({ ok: true, byteLength: currentGlb.byteLength });
       }
     });
