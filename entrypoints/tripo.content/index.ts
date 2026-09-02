@@ -1,7 +1,7 @@
 import { browser, createShadowRootUi, defineContentScript } from '#imports';
 import { mount, unmount } from 'svelte';
 import Overlay from './Overlay.svelte';
-import type { PageState } from '../../src/lib/types';
+import type { DownloaderState, PageState } from '../../src/lib/types';
 import { findWebsiteState } from '../../src/lib/website-state-machine';
 
 const websiteState = findWebsiteState(window.location.href);
@@ -176,7 +176,7 @@ async function downloadActiveModel() {
     return { ok: false, error };
   }
 
-  const buffer = toArrayBuffer(result.buffer)
+  let buffer = toArrayBuffer(result.buffer)
     ?? (typeof result.bufferBase64 === 'string' ? base64ToArrayBuffer(result.bufferBase64) : null);
   if (!buffer) {
     const error = 'Processed Tripo3D model did not return a downloadable buffer.';
@@ -188,14 +188,26 @@ async function downloadActiveModel() {
     return { ok: false, error };
   }
 
+  try {
+    const state = await browser.runtime.sendMessage({ type: 'get-state' }) as DownloaderState;
+    const { formatGlbTextures } = await import('../../src/lib/texture-format');
+    buffer = await formatGlbTextures(buffer, state.textureFormat);
+    console.debug('[Meshy Downloader] Applied texture format to Tripo3D GLB', {
+      textureFormat: state.textureFormat,
+      byteLength: buffer.byteLength,
+    });
+  } catch (error) {
+    console.warn('[Meshy Downloader] Texture format conversion failed — downloading without conversion', error);
+  }
+
   downloadBuffer(buffer, result.filename ?? 'tripo_model_cleaned.glb');
   notifyOverlay('download-started', {
-    byteLength: result.byteLength ?? buffer.byteLength,
+    byteLength: buffer.byteLength,
     generation: modelGeneration,
     modelKey: activeModel.modelKey,
   });
 
-  return { ok: true, byteLength: result.byteLength ?? buffer.byteLength };
+  return { ok: true, byteLength: buffer.byteLength };
 }
 
 export default defineContentScript({

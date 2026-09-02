@@ -142,7 +142,7 @@
     scheduleAutoHide();
   }
 
-  function onAssetReady(event: Event) {
+  async function onAssetReady(event: Event) {
     const detail = (event as CustomEvent<OverlayEventDetail>).detail;
     lastAssetSize = detail.byteLength;
     visibleGeneration = detail.generation;
@@ -150,6 +150,14 @@
     currentFileFormat = detail.fileFormat ?? currentFileFormat;
     errorMessage = undefined;
     phase = 'ready';
+
+    try {
+      const state = await browser.runtime.sendMessage({ type: 'get-state' });
+      if (state?.neverShowAgain) return;
+    } catch {
+      // Keep the download prompt available if the preference cannot be read.
+    }
+
     clearLeaveTimer();
     leaving = false;
     visible = true;

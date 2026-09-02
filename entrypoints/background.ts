@@ -1,6 +1,6 @@
 import { browser, defineBackground } from '#imports';
 import { getState, recordAuth, recordDownload, resetState, setState } from '../src/lib/storage';
-import type { PageState, TabState } from '../src/lib/types';
+import type { PageState, TabState, TextureFormat } from '../src/lib/types';
 import { processTripoGlb } from '../src/lib/tripo-processing';
 import { findWebsiteState, isSupportedWebsiteUrl } from '../src/lib/website-state-machine';
 
@@ -56,6 +56,12 @@ export default defineBackground(() => {
 
     if (message.type === 'set-never-show-again') {
       return setState({ neverShowAgain: Boolean(message.value), lastActionAt: Date.now() });
+    }
+
+    if (message.type === 'set-texture-format') {
+      const allowedFormats: TextureFormat[] = ['default', 'webp', 'png', 'jpg'];
+      const textureFormat = allowedFormats.includes(message.value) ? message.value : 'default';
+      return setState({ textureFormat, lastActionAt: Date.now() });
     }
 
     if (message.type === 'set-github-star-prompt-hidden') {

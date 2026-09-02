@@ -1,7 +1,7 @@
 import { browser, createShadowRootUi, defineContentScript } from '#imports';
 import { mount, unmount } from 'svelte';
 import Overlay from './Overlay.svelte';
-import type { MeshyAuthPayload, PageState } from '../../src/lib/types';
+import type { DownloaderState, MeshyAuthPayload, PageState } from '../../src/lib/types';
 import { BRIDGE_SOURCE, CONTENT_SOURCE, findWebsiteState } from '../../src/lib/website-state-machine';
 
 const GLB_MAGIC = 0x46546c67;
@@ -612,39 +612,49 @@ async function fetchTexturePng(url: string) {
  * captured texture_*.png files and embeds it into the GLB before saving.
  */
 async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byteLength: number; modelKey: string }) {
+  let downloadBufferValue = glb.buffer;
+
   if (glbHasEmbeddedTextures(glb.buffer)) {
     console.debug('[Meshy Downloader] GLB has embedded textures — texture fallback skipped');
-    downloadBuffer(glb.buffer);
-    return;
-  }
+  } else {
+    const textureUrl = pickTextureUrl(glb.modelKey);
+    if (!textureUrl) {
+      console.debug('[Meshy Downloader] GLB has no embedded textures and no texture_*.png URL was captured — downloading as-is');
+    } else {
+      console.debug('[Meshy Downloader] GLB has no embedded textures — embedding texture fallback', textureUrl);
 
-  const textureUrl = pickTextureUrl(glb.modelKey);
-  if (!textureUrl) {
-    console.debug('[Meshy Downloader] GLB has no embedded textures and no texture_*.png URL was captured — downloading as-is');
-    downloadBuffer(glb.buffer);
-    return;
-  }
+      try {
+        const texturePng = await fetchTexturePng(textureUrl);
+        const embedded = embedTextureInGlb(glb.buffer, texturePng);
+        if (!embedded) throw new Error('Failed to embed the texture into the GLB.');
 
-  console.debug('[Meshy Downloader] GLB has no embedded textures — embedding texture fallback', textureUrl);
+        downloadBufferValue = embedded;
+        console.debug('[Meshy Downloader] Texture embedded into GLB', {
+          url: textureUrl,
+          textureByteLength: texturePng.byteLength,
+          originalByteLength: glb.byteLength,
+          embeddedByteLength: embedded.byteLength,
+        });
+        notifyOverlay('texture-fallback-embedded', { url: textureUrl, byteLength: embedded.byteLength, modelKey: glb.modelKey });
+      } catch (error) {
+        console.warn('[Meshy Downloader] Texture fallback failed — downloading GLB without texture', error);
+      }
+    }
+  }
 
   try {
-    const texturePng = await fetchTexturePng(textureUrl);
-    const embedded = embedTextureInGlb(glb.buffer, texturePng);
-    if (!embedded) {
-      throw new Error('Failed to embed the texture into the GLB.');
-    }
-    console.debug('[Meshy Downloader] Texture embedded into GLB', {
-      url: textureUrl,
-      textureByteLength: texturePng.byteLength,
-      originalByteLength: glb.byteLength,
-      embeddedByteLength: embedded.byteLength,
+    const state = await browser.runtime.sendMessage({ type: 'get-state' }) as DownloaderState;
+    const { formatGlbTextures } = await import('../../src/lib/texture-format');
+    downloadBufferValue = await formatGlbTextures(downloadBufferValue, state.textureFormat);
+    console.debug('[Meshy Downloader] Applied texture format', {
+      textureFormat: state.textureFormat,
+      byteLength: downloadBufferValue.byteLength,
     });
-    downloadBuffer(embedded);
-    notifyOverlay('texture-fallback-embedded', { url: textureUrl, byteLength: embedded.byteLength, modelKey: glb.modelKey });
   } catch (error) {
-    console.warn('[Meshy Downloader] Texture fallback failed — downloading GLB without texture', error);
-    downloadBuffer(glb.buffer);
+    console.warn('[Meshy Downloader] Texture format conversion failed — downloading without conversion', error);
   }
+
+  downloadBuffer(downloadBufferValue);
 }
 
 /** Downloads the current GLB, embedding a texture_*.png fallback when needed. */

@@ -6,8 +6,11 @@ export type MeshyAuthPayload = {
   url: string;
 };
 
+export type TextureFormat = 'default' | 'webp' | 'png' | 'jpg';
+
 export type DownloaderState = {
   neverShowAgain: boolean;
+  textureFormat: TextureFormat;
   githubStarPromptHidden?: boolean;
   lastSeenUrl?: string;
   lastActionAt?: number;

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '#imports';
   import { onMount } from 'svelte';
-  import type { DownloaderState, TabState } from '../../src/lib/types';
+  import type { DownloaderState, TabState, TextureFormat } from '../../src/lib/types';
 
   let tabState: TabState | null = null;
   let downloaderState: DownloaderState | null = null;
@@ -45,14 +45,22 @@
     await refresh();
   }
 
-  async function neverShowAgain() {
-    downloaderState = await browser.runtime.sendMessage({ type: 'set-never-show-again', value: true });
-    message = 'Overlay disabled.';
+  async function setAutoAskToDownload(event: Event) {
+    const enabled = (event.currentTarget as HTMLInputElement).checked;
+    downloaderState = await browser.runtime.sendMessage({
+      type: 'set-never-show-again',
+      value: !enabled,
+    });
+    message = enabled ? 'Auto ask enabled.' : 'Auto ask disabled.';
   }
 
-  async function enableAgain() {
-    downloaderState = await browser.runtime.sendMessage({ type: 'reset-state' });
-    message = 'Overlay restored.';
+  async function setTextureFormat(event: Event) {
+    const textureFormat = (event.currentTarget as HTMLSelectElement).value as TextureFormat;
+    downloaderState = await browser.runtime.sendMessage({
+      type: 'set-texture-format',
+      value: textureFormat,
+    });
+    message = `Texture format set to ${textureFormat === 'default' ? 'default' : textureFormat.toUpperCase()}.`;
   }
 
   onMount(refresh);
@@ -106,11 +114,33 @@
 
   <hr />
 
-  {#if downloaderState?.neverShowAgain}
-    <button class="secondary" on:click={enableAgain}>Enable auto-popup</button>
-  {:else}
-    <button class="secondary" on:click={neverShowAgain}>Disable auto-popup</button>
-  {/if}
+  <section class="settings" aria-label="Download settings">
+    <label class="setting-row" for="texture-format">
+      <span>Texture Format:</span>
+      <select
+        id="texture-format"
+        value={downloaderState?.textureFormat ?? 'default'}
+        on:change={setTextureFormat}
+      >
+        <option value="default">Default</option>
+        <option value="webp">WEBP</option>
+        <option value="png">PNG</option>
+        <option value="jpg">JPG</option>
+      </select>
+    </label>
+
+    <label class="setting-row" for="auto-ask-to-download">
+      <span>Auto Ask To Download:</span>
+      <input
+        id="auto-ask-to-download"
+        class="switch-input"
+        type="checkbox"
+        role="switch"
+        checked={!downloaderState?.neverShowAgain}
+        on:change={setAutoAskToDownload}
+      />
+    </label>
+  </section>
 
   <button class="ghost" on:click={refresh}>Refresh</button>
 
@@ -217,5 +247,69 @@
     border: 0;
     border-top: 1px solid #2a2a31;
     margin: 14px 0;
+  }
+
+  .settings {
+    display: grid;
+    gap: 10px;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  select {
+    min-width: 112px;
+    border: 1px solid #3a3a43;
+    border-radius: 8px;
+    padding: 7px 30px 7px 9px;
+    background: #2a2a31;
+    color: #f4f4f5;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .switch-input {
+    width: 42px;
+    height: 24px;
+    margin: 0;
+    appearance: none;
+    border-radius: 999px;
+    background: #3a3a43;
+    cursor: pointer;
+    position: relative;
+    transition: background 160ms ease;
+  }
+
+  .switch-input::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 160ms ease;
+  }
+
+  .switch-input:checked {
+    background: #6c5ce7;
+  }
+
+  .switch-input:checked::after {
+    transform: translateX(18px);
+  }
+
+  .switch-input:focus-visible,
+  select:focus-visible {
+    outline: 2px solid #a99df5;
+    outline-offset: 2px;
   }
 </style>

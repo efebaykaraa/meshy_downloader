@@ -5,6 +5,7 @@ const KEY = 'meshy-downloader-state';
 
 const DEFAULT_STATE: DownloaderState = {
   neverShowAgain: false,
+  textureFormat: 'default',
   githubStarPromptHidden: false,
   downloadCount: 0,
 };
