@@ -101,6 +101,27 @@ Firefox -> about:debugging#/runtime/this-firefox -> Load Temporary Add-on -> Sel
 
 Firefox may show a WXT warning about `data_collection_permissions`. The extension still builds; the warning is related to Firefox extension store requirements.
 
+## Local Testing
+
+Run `pnpm check` to generate WXT types and check TypeScript, then run
+`pnpm build` (Chrome) or `pnpm build:firefox` (Firefox). Load the resulting
+extension using the browser instructions above.
+
+1. Open Meshy or Tripo3D and reload the page after loading the extension.
+2. Open the extension popup and confirm it recognizes the supported website.
+3. Open a model and wait for the download overlay to become ready.
+4. Download the model and open the `.glb` in a compatible viewer. Check geometry,
+   materials, and textures; check animation for an animated Meshy model.
+5. Switch to a different model and confirm the next download is the new model.
+6. Try the texture format settings and confirm they persist after reopening the popup.
+7. Open an unsupported website and confirm the popup offers to open a supported workspace.
+
+Check the page and extension background consoles for errors. Live model detection
+and downloads require a signed-in website session and must be tested in the browser.
+
+For distributable test packages, run `pnpm zip` and `pnpm zip:firefox`.
+The archives are written to `.output/`.
+
 ## Dependencies
 
 Main model-processing dependencies:

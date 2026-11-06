@@ -16,18 +16,6 @@ const DEQUANTIZE_DEFAULTS: Required<DequantizeOptions> = {
   pattern: /^((?!JOINTS_).)*$/,
 };
 
-function assignDefaults<Defaults, Options>(defaults: Defaults, options: Options): Defaults & Options {
-  const result = { ...defaults } as Defaults & Partial<Options>;
-
-  for (const key in options) {
-    if (options[key] !== undefined) {
-      result[key] = options[key] as Defaults[Extract<keyof Defaults, string>] & Options[Extract<keyof Options, string>];
-    }
-  }
-
-  return result as Defaults & Options;
-}
-
 function createTransform(name: string, fn: Transform): Transform {
   Object.defineProperty(fn, 'name', { value: name });
   return fn;
@@ -75,7 +63,9 @@ function dequantizePrimitive(primitive: Primitive, options: Required<DequantizeO
 }
 
 export function dequantize(options: DequantizeOptions = DEQUANTIZE_DEFAULTS): Transform {
-  const resolvedOptions = assignDefaults(DEQUANTIZE_DEFAULTS, options);
+  const resolvedOptions: Required<DequantizeOptions> = {
+    pattern: options.pattern ?? DEQUANTIZE_DEFAULTS.pattern,
+  };
 
   return createTransform('dequantize', (document: Document): void => {
     for (const mesh of document.getRoot().listMeshes()) {
