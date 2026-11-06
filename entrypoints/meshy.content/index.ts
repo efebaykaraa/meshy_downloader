@@ -122,6 +122,9 @@ function getModelKey(url: string | undefined): string | undefined {
   if (!url) return undefined;
   try {
     const parsed = new URL(url, window.location.href);
+    // Plain GLB outputs (rigged/animated models) share one directory, one file per
+    // animation — keep the filename so each animation is a separate model.
+    if (/\.glb$/i.test(parsed.pathname)) return `${parsed.origin}${parsed.pathname}`;
     // Remove the filename (last path segment) to get the directory
     const dir = parsed.pathname.replace(/\/[^/]+$/, '');
     return `${parsed.origin}${dir}`;
@@ -145,8 +148,10 @@ function getPageState(): PageState {
   };
 }
 
-function makeFileName() {
+function makeFileName(modelKey?: string) {
   const date = new Date().toISOString().replace(/[:.]/g, '-');
+  const sourceName = modelKey?.match(/\/([^/]+)\.glb$/i)?.[1];
+  if (sourceName) return `meshy-${sourceName}-${date}.glb`;
   return `meshy-model-${date}.glb`;
 }
 
@@ -654,7 +659,7 @@ async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byte
     console.warn('[Meshy Downloader] Texture format conversion failed — downloading without conversion', error);
   }
 
-  downloadBuffer(downloadBufferValue);
+  downloadBuffer(downloadBufferValue, makeFileName(glb.modelKey));
 }
 
 /** Downloads the current GLB, embedding a texture_*.png fallback when needed. */
@@ -834,7 +839,7 @@ export default defineContentScript({
         return;
       }
 
-      if (data.type === 'model-json-detected') {
+      if (data.type === 'model-json-detected' || data.type === 'model-glb-detected') {
         handleModelJsonDetected(data.payload as { url?: string });
         return;
       }

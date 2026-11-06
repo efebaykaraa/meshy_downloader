@@ -10,6 +10,7 @@ export type WebsiteBridgeEvent = {
     | 'auth-captured'
     | 'model-json-detected'
     | 'model-binary-detected'
+    | 'model-glb-detected'
     | 'texture-detected'
     | 'tripo-glb-url-detected'
     | 'glb-ready'
@@ -100,6 +101,12 @@ function makeGlbReadyEvent(buffer: ArrayBuffer, sourceUrl = globalThis.location?
   };
 }
 
+/** Plain GLB outputs on Meshy's asset CDN, e.g. rigged/animated `*_withSkin.glb`. */
+export function isMeshyOutputGlbUrl(url: URL) {
+  return url.hostname === 'assets.meshy.ai'
+    && /\/output\/[^/]+\.glb$/i.test(url.pathname);
+}
+
 function createMeshyState(): WebsiteState {
   function isMeshyUrl(url?: string) {
     return !!url && /^https:\/\/www\.meshy\.ai\//.test(url);
@@ -107,7 +114,7 @@ function createMeshyState(): WebsiteState {
 
   function isModelBinaryRequest(input: unknown) {
     const url = parseUrl(input, globalThis.location?.href ?? 'https://www.meshy.ai/');
-    return !!url && /(^|\/)model\.meshy$/i.test(url.pathname);
+    return !!url && (/(^|\/)model\.meshy$/i.test(url.pathname) || isMeshyOutputGlbUrl(url));
   }
 
   return {
@@ -135,6 +142,21 @@ function createMeshyState(): WebsiteState {
             payload: {
               url: url.href,
               expires: url.searchParams.get('Expires'),
+              capturedAt: Date.now(),
+              pageUrl,
+            },
+          });
+        }
+
+        // Rigged / animated models (e.g. Animation_Walking_withSkin.glb) are served
+        // as plain, unobfuscated GLB files. Each animation is a separate file in the
+        // same output directory, so treat every such GLB as its own model.
+        if (isMeshyOutputGlbUrl(url)) {
+          console.debug('[Meshy Downloader] Meshy output GLB URL detected', url.href);
+          events.push({
+            type: 'model-glb-detected',
+            payload: {
+              url: url.href,
               capturedAt: Date.now(),
               pageUrl,
             },
