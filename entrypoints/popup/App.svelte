@@ -3,6 +3,8 @@
   import { onMount } from 'svelte';
   import type { DownloaderState, TabState, TextureFormat } from '../../src/lib/types';
 
+  const extensionName = browser.runtime.getManifest().name;
+
   let tabState: TabState | null = null;
   let downloaderState: DownloaderState | null = null;
   let loading = true;
@@ -66,8 +68,12 @@
   onMount(refresh);
 </script>
 
+<svelte:head>
+  <title>{extensionName}</title>
+</svelte:head>
+
 <main>
-  <h1>Meshy Downloader</h1>
+  <h1>{extensionName}</h1>
 
   {#if loading}
     <p>Checking current tab...</p>

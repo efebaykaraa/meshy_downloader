@@ -21,9 +21,9 @@ export default defineConfig({
     ],
   }),
   
-  manifest: {
-    name: 'Meshy Downloader',
-    description: 'Downloads meshy models.',
+  manifest: ({ browser }) => ({
+    name: browser === 'chrome' ? '3D Downloader' : 'Meshy Downloader',
+    description: 'Downloads AI generated 3D models for free.',
     permissions: ['tabs', 'storage', 'activeTab'],
     content_security_policy: {
       extension_pages: "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
@@ -43,5 +43,5 @@ export default defineConfig({
         },
       },
     },
-  },
+  }),
 });
