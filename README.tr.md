@@ -18,11 +18,11 @@
 
 ---
 
-# Meshy Downloader
+# 3D Downloader
 
 Desteklenen yapay zekâ model üretim sitelerinde indirilebilir 3D modelleri algılayan ve tek tıkla `.glb` indirme penceresi sunan bir WXT + Svelte tarayıcı eklentisi.
 
-Meshy Downloader şu anda şunları destekler:
+3D Downloader şu anda şunları destekler:
 
 * `meshy.ai`
 * `tripo3d.ai`
@@ -57,7 +57,7 @@ pnpm install
 
 ## Hazır Eklentiyi Kurma
 
-Eklentinin hazır derlenmiş sürümleri [releases sayfasında](https://github.com/efebaykaraa/meshy_downloader/releases/tag/Stable) bulunabilir.
+Eklentinin hazır derlenmiş sürümleri [releases sayfasında](https://github.com/efebaykaraa/meshy_downloader/releases) bulunabilir.
 
 En güncel sürümü indirin ve tarayıcınıza yüklemek için aşağıdaki adımları izleyin.
 
@@ -67,7 +67,7 @@ En güncel sürümü indirin ve tarayıcınıza yüklemek için aşağıdaki ad�
 2. Chrome’u açın ve `chrome://extensions` adresine gidin.
 3. Sağ üstten `Developer mode` seçeneğini etkinleştirin.
 4. `Load unpacked` butonuna tıklayın.
-5. Çıkardığınız klasörü seçin, örneğin `meshy-downloader-chrome`.
+5. Çıkardığınız klasörü seçin, örneğin `3d-downloader-chrome`.
 
 ### Firefox
 
@@ -77,7 +77,7 @@ Elle kurulum için:
 
 1. Firefox’u açın ve `about:debugging#/runtime/this-firefox` adresine gidin.
 2. `Load Temporary Add-on` butonuna tıklayın.
-3. İndirdiğiniz sıkıştırılmış zip dosyasını seçin, örneğin `meshy-downloader-v<version>-firefox.zip`.
+3. İndirdiğiniz sıkıştırılmış zip dosyasını seçin, örneğin `3d-downloader-<version>-firefox.zip`.
 
 ## Chrome İçin Derleme
 

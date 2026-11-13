@@ -15,7 +15,7 @@ const COMPONENT_FLOAT = 5126;
 const KHR_MESH_QUANTIZATION = 'KHR_mesh_quantization';
 const websiteState = findWebsiteState(window.location.href);
 const overlayConfig = websiteState?.overlay ?? {
-  eventPrefix: 'meshy-downloader',
+  eventPrefix: '3d-downloader',
   assetLabel: 'model',
   fileFormat: 'GLB',
 };
@@ -460,7 +460,7 @@ function normalizeQuantizedPositionsInGlb(buffer: ArrayBuffer) {
       gltf.extensionsUsed = stripExtension(gltf.extensionsUsed, KHR_MESH_QUANTIZATION);
     }
 
-    console.debug('[Meshy Downloader] Converted quantized POSITION accessors to FLOAT', {
+    console.debug('[3D Downloader] Converted quantized POSITION accessors to FLOAT', {
       convertedCount,
       originalByteLength: buffer.byteLength,
       nextByteLength: nextBin.byteLength,
@@ -468,7 +468,7 @@ function normalizeQuantizedPositionsInGlb(buffer: ArrayBuffer) {
 
     return buildGlb(gltf, nextBin);
   } catch (error) {
-    console.warn('[Meshy Downloader] Failed to normalize quantized GLB positions', error);
+    console.warn('[3D Downloader] Failed to normalize quantized GLB positions', error);
     return buffer;
   }
 }
@@ -476,7 +476,7 @@ function normalizeQuantizedPositionsInGlb(buffer: ArrayBuffer) {
 async function handleAuthCaptured(auth: MeshyAuthPayload) {
   lastAuth = auth;
   await browser.runtime.sendMessage({ type: 'record-auth', auth }).catch(() => {});
-  console.debug('[Meshy Downloader] Meshy auth captured', auth);
+  console.debug('[3D Downloader] Meshy auth captured', auth);
 }
 
 /**
@@ -498,7 +498,7 @@ function handleTextureDetected(payload: { url?: string }) {
   }
   lastTextureUrl = url;
 
-  console.debug('[Meshy Downloader] texture URL detected', { url, modelKey });
+  console.debug('[3D Downloader] texture URL detected', { url, modelKey });
 }
 
 function glbHasEmbeddedTextures(buffer: ArrayBuffer) {
@@ -595,7 +595,7 @@ function embedTextureInGlb(glbBuffer: ArrayBuffer, texturePng: Uint8Array): Arra
 
     return buildGlb(gltf, nextBin);
   } catch (error) {
-    console.warn('[Meshy Downloader] Failed to embed texture into GLB', error);
+    console.warn('[3D Downloader] Failed to embed texture into GLB', error);
     return null;
   }
 }
@@ -620,13 +620,13 @@ async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byte
   let downloadBufferValue = glb.buffer;
 
   if (glbHasEmbeddedTextures(glb.buffer)) {
-    console.debug('[Meshy Downloader] GLB has embedded textures — texture fallback skipped');
+    console.debug('[3D Downloader] GLB has embedded textures — texture fallback skipped');
   } else {
     const textureUrl = pickTextureUrl(glb.modelKey);
     if (!textureUrl) {
-      console.debug('[Meshy Downloader] GLB has no embedded textures and no texture_*.png URL was captured — downloading as-is');
+      console.debug('[3D Downloader] GLB has no embedded textures and no texture_*.png URL was captured — downloading as-is');
     } else {
-      console.debug('[Meshy Downloader] GLB has no embedded textures — embedding texture fallback', textureUrl);
+      console.debug('[3D Downloader] GLB has no embedded textures — embedding texture fallback', textureUrl);
 
       try {
         const texturePng = await fetchTexturePng(textureUrl);
@@ -634,7 +634,7 @@ async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byte
         if (!embedded) throw new Error('Failed to embed the texture into the GLB.');
 
         downloadBufferValue = embedded;
-        console.debug('[Meshy Downloader] Texture embedded into GLB', {
+        console.debug('[3D Downloader] Texture embedded into GLB', {
           url: textureUrl,
           textureByteLength: texturePng.byteLength,
           originalByteLength: glb.byteLength,
@@ -642,7 +642,7 @@ async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byte
         });
         notifyOverlay('texture-fallback-embedded', { url: textureUrl, byteLength: embedded.byteLength, modelKey: glb.modelKey });
       } catch (error) {
-        console.warn('[Meshy Downloader] Texture fallback failed — downloading GLB without texture', error);
+        console.warn('[3D Downloader] Texture fallback failed — downloading GLB without texture', error);
       }
     }
   }
@@ -651,12 +651,12 @@ async function downloadModelWithTextureFallback(glb: { buffer: ArrayBuffer; byte
     const state = await browser.runtime.sendMessage({ type: 'get-state' }) as DownloaderState;
     const { formatGlbTextures } = await import('../../src/lib/texture-format');
     downloadBufferValue = await formatGlbTextures(downloadBufferValue, state.textureFormat);
-    console.debug('[Meshy Downloader] Applied texture format', {
+    console.debug('[3D Downloader] Applied texture format', {
       textureFormat: state.textureFormat,
       byteLength: downloadBufferValue.byteLength,
     });
   } catch (error) {
-    console.warn('[Meshy Downloader] Texture format conversion failed — downloading without conversion', error);
+    console.warn('[3D Downloader] Texture format conversion failed — downloading without conversion', error);
   }
 
   downloadBuffer(downloadBufferValue, makeFileName(glb.modelKey));
@@ -683,7 +683,7 @@ function handleModelJsonDetected(payload: { url?: string }) {
 
   currentJsonModelKey = modelKey ?? currentJsonModelKey;
 
-  console.debug('[Meshy Downloader] model.json detected', {
+  console.debug('[3D Downloader] model.json detected', {
     url: payload.url,
     modelKey: currentJsonModelKey,
     isNewModel,
@@ -743,7 +743,7 @@ function handleModelBinaryDetected(payload: { url?: string }) {
   const modelKey = getModelKey(payload.url);
   if (!modelKey) return;
 
-  console.debug('[Meshy Downloader] model.meshy URL detected', { modelKey, url: payload.url });
+  console.debug('[3D Downloader] model.meshy URL detected', { modelKey, url: payload.url });
 
   // If model.json hasn't arrived yet, we can still prepare the model key.
   // We don't bump generation or notify the UI here — that's model.json's job.
@@ -751,7 +751,7 @@ function handleModelBinaryDetected(payload: { url?: string }) {
   const cached = glbCache.get(modelKey);
   if (cached && (!currentGlb || currentGlb.modelKey !== modelKey)) {
     currentGlb = { buffer: cached.buffer.slice(0), byteLength: cached.byteLength, modelKey };
-    console.debug('[Meshy Downloader] Restored cached GLB from binary URL match', { modelKey, byteLength: cached.byteLength });
+    console.debug('[3D Downloader] Restored cached GLB from binary URL match', { modelKey, byteLength: cached.byteLength });
   }
 }
 
@@ -770,7 +770,7 @@ function handleGlbReady(buffer: ArrayBuffer, byteLength: number, sourceUrl?: str
   // Cache it
   glbCache.set(modelKey, { buffer: normalizedBuffer.slice(0), byteLength: normalizedByteLength });
 
-  console.debug('[Meshy Downloader] GLB ready', {
+  console.debug('[3D Downloader] GLB ready', {
     modelKey,
     byteLength: normalizedByteLength,
     originalByteLength: byteLength,
@@ -790,7 +790,7 @@ async function handleUserChoice(choice: 'yes' | 'no' | 'never') {
     case 'yes':
       if (!currentGlb) {
         // GLB hasn't arrived yet — queue the download for when it does
-        console.debug('[Meshy Downloader] User chose to download, but GLB not yet available — queuing');
+        console.debug('[3D Downloader] User chose to download, but GLB not yet available — queuing');
         pendingDownload = true;
         notifyOverlay('download-pending', {
           generation: modelGeneration,
@@ -798,7 +798,7 @@ async function handleUserChoice(choice: 'yes' | 'no' | 'never') {
         });
         break;
       }
-      console.debug('[Meshy Downloader] User chose to download the model');
+      console.debug('[3D Downloader] User chose to download the model');
       pendingDownload = false;
       startModelDownload(currentGlb);
       break;
@@ -863,7 +863,7 @@ export default defineContentScript({
     await browser.runtime.sendMessage({ type: 'record-page-seen' }).catch(() => {});
 
     const ui = await createShadowRootUi(ctx, {
-      name: 'meshy-downloader-overlay',
+      name: 'three-d-downloader-overlay',
       position: 'overlay',
       anchor: () => document.body ?? document.documentElement,
       onMount: (container) => {

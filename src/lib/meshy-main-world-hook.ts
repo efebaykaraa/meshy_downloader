@@ -8,7 +8,7 @@ import {
 
 type AnyRecord = Record<string, unknown>;
 
-const INSTALLED_KEY = '__meshy_downloader_installed__';
+const INSTALLED_KEY = '__3d_downloader_installed__';
 
 function isRecord(value: unknown): value is AnyRecord {
   return typeof value === 'object' && value !== null;
@@ -22,7 +22,7 @@ function postToContent(event: WebsiteBridgeEvent) {
       event.transfer,
     );
   } catch (error) {
-    console.warn('[Meshy Downloader] Failed to post message to content script', error);
+    console.warn('[3D Downloader] Failed to post message to content script', error);
   }
 }
 
@@ -86,7 +86,7 @@ export function installMeshyMainWorldHook() {
     try {
       detectWorkerMessage(event.data);
     } catch (error) {
-      console.warn('[Meshy Downloader] Failed to inspect worker message', error);
+      console.warn('[3D Downloader] Failed to inspect worker message', error);
     }
   }
 
@@ -100,7 +100,7 @@ export function installMeshyMainWorldHook() {
     try {
       detectWorkerPostMessage(message);
     } catch (error) {
-      console.warn('[Meshy Downloader] Failed to inspect Worker.postMessage payload', error);
+      console.warn('[3D Downloader] Failed to inspect Worker.postMessage payload', error);
     }
 
     return nativePostMessage.apply(this, arguments as unknown as Parameters<Worker['postMessage']>);
@@ -135,7 +135,7 @@ export function installMeshyMainWorldHook() {
     try {
       detectRequest(input);
     } catch (error) {
-      console.warn('[Meshy Downloader] Failed to inspect fetch URL', error);
+      console.warn('[3D Downloader] Failed to inspect fetch URL', error);
     }
 
     const responsePromise = nativeFetch.apply(this, [input, init]);
@@ -143,7 +143,7 @@ export function installMeshyMainWorldHook() {
     if (stateMachine.isBinaryRequest(input)) {
       responsePromise
         .then((response) => response.clone().arrayBuffer().then((buffer) => detectBinaryResponse(buffer, response.url)))
-        .catch((error) => console.warn('[Meshy Downloader] Failed to inspect fetch response', error));
+        .catch((error) => console.warn('[3D Downloader] Failed to inspect fetch response', error));
     }
 
     return responsePromise;
@@ -159,7 +159,7 @@ export function installMeshyMainWorldHook() {
     try {
       detectRequest(url);
     } catch (error) {
-      console.warn('[Meshy Downloader] Failed to inspect XHR URL', error);
+      console.warn('[3D Downloader] Failed to inspect XHR URL', error);
     }
 
     if (stateMachine.isBinaryRequest(url)) {
@@ -174,7 +174,7 @@ export function installMeshyMainWorldHook() {
             .then((buffer) => {
               detectBinaryResponse(buffer, sourceUrl);
             })
-            .catch((error) => console.warn('[Meshy Downloader] Failed to inspect XHR blob response', error));
+            .catch((error) => console.warn('[3D Downloader] Failed to inspect XHR blob response', error));
         }
       });
     }
@@ -193,7 +193,7 @@ export function installMeshyMainWorldHook() {
           // which bypass the fetch/XHR patches.
           detectRequest(value);
         } catch (error) {
-          console.warn('[Meshy Downloader] Failed to inspect image src', error);
+          console.warn('[3D Downloader] Failed to inspect image src', error);
         }
 
         return nativeImageSrcSetter.call(this, value);

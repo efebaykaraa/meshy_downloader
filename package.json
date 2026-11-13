@@ -1,6 +1,6 @@
 {
-  "name": "meshy-downloader",
-  "version": "1.4.1",
+  "name": "3d-downloader",
+  "version": "1.4.2",
   "private": true,
   "type": "module",
   "scripts": {

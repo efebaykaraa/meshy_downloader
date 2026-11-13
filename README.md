@@ -18,11 +18,11 @@
 
 ---
 
-# Meshy Downloader
+# 3D Downloader
 
 A WXT + Svelte browser extension that detects downloadable 3D models on supported AI model-generation websites and offers a one-click `.glb` download popup.
 
-Meshy Downloader currently supports:
+3D Downloader currently supports:
 
 * `meshy.ai`
 * `tripo3d.ai`
@@ -67,7 +67,7 @@ Download the latest release and follow the instructions below to load the extens
 2. Open Chrome and go to `chrome://extensions`.
 3. Enable `Developer mode` in the top right.
 4. Click `Load unpacked`.
-5. Select the extracted folder, for example `meshy-downloader-chrome`.
+5. Select the extracted folder, for example `3d-downloader-chrome`.
 
 ### Firefox
 
@@ -77,7 +77,7 @@ For manual installation:
 
 1. Open Firefox and go to `about:debugging#/runtime/this-firefox`.
 2. Click `Load Temporary Add-on`.
-3. Select the compressed zip file you downloaded, for example `meshy-downloader-v<version>-firefox.zip`.
+3. Select the compressed zip file you downloaded, for example `3d-downloader-<version>-firefox.zip`.
 
 ## Build for Chrome
 
@@ -136,7 +136,7 @@ Main model-processing dependencies:
 * If anything goes wrong, reload the page and retry.
 * Make sure the model is visible or has been loaded by the website before trying to download it.
 * On Tripo3D, switch to the model you want before clicking download. The extension tracks the newest valid visible model request.
-* Debug logs are printed with the `[Meshy Downloader]` prefix in the page console.
+* Debug logs are printed with the `[3D Downloader]` prefix in the page console.
 
 ## Support
 

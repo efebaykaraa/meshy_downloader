@@ -1,7 +1,7 @@
 type AnyRecord = Record<string, unknown>;
 
-export const BRIDGE_SOURCE = 'meshy-downloader-main-world';
-export const CONTENT_SOURCE = 'meshy-downloader-content-script';
+export const BRIDGE_SOURCE = '3d-downloader-main-world';
+export const CONTENT_SOURCE = '3d-downloader-content-script';
 
 export type WebsiteId = 'meshy' | 'tripo';
 
@@ -122,7 +122,7 @@ function createMeshyState(): WebsiteState {
     label: 'Meshy',
     workspaceUrl: 'https://www.meshy.ai/workspace',
     overlay: {
-      eventPrefix: 'meshy-downloader',
+      eventPrefix: '3d-downloader',
       assetLabel: 'model',
       fileFormat: 'GLB',
     },
@@ -136,7 +136,7 @@ function createMeshyState(): WebsiteState {
         const isModelJson = /(^|\/)(model|mesh)\.json$/i.test(url.pathname);
 
         if (isModelJson && url.searchParams.has('Expires')) {
-          console.debug('[Meshy Downloader] Meshy model JSON detected', url.href);
+          console.debug('[3D Downloader] Meshy model JSON detected', url.href);
           events.push({
             type: 'model-json-detected',
             payload: {
@@ -152,7 +152,7 @@ function createMeshyState(): WebsiteState {
         // as plain, unobfuscated GLB files. Each animation is a separate file in the
         // same output directory, so treat every such GLB as its own model.
         if (isMeshyOutputGlbUrl(url)) {
-          console.debug('[Meshy Downloader] Meshy output GLB URL detected', url.href);
+          console.debug('[3D Downloader] Meshy output GLB URL detected', url.href);
           events.push({
             type: 'model-glb-detected',
             payload: {
@@ -164,7 +164,7 @@ function createMeshyState(): WebsiteState {
         }
 
         if (/(^|\/)model\.meshy$/i.test(url.pathname)) {
-          console.debug('[Meshy Downloader] Meshy model binary URL detected', url.href);
+          console.debug('[3D Downloader] Meshy model binary URL detected', url.href);
           events.push({
             type: 'model-binary-detected',
             payload: {
@@ -180,7 +180,7 @@ function createMeshyState(): WebsiteState {
         // when the downloaded GLB has no embedded textures.
         const filename = url.pathname.split('/').pop() ?? '';
         if (/^texture_[^/]*\.png/i.test(filename)) {
-          console.debug('[Meshy Downloader] Meshy texture URL detected', url.href);
+          console.debug('[3D Downloader] Meshy texture URL detected', url.href);
           events.push({
             type: 'texture-detected',
             payload: {
@@ -208,7 +208,7 @@ function createMeshyState(): WebsiteState {
           return [];
         }
 
-        console.debug('[Meshy Downloader] Meshy auth captured', { hostname, timestamp, signature });
+        console.debug('[3D Downloader] Meshy auth captured', { hostname, timestamp, signature });
 
         return [{
           type: 'auth-captured',
@@ -227,7 +227,7 @@ function createMeshyState(): WebsiteState {
         if (message.type === 'process' && message.success === true) {
           const raw = toArrayBuffer(message.data);
           if (raw && looksLikeGlb(raw)) {
-            console.debug('[Meshy Downloader] GLB captured from worker process result', { byteLength: raw.byteLength });
+            console.debug('[3D Downloader] GLB captured from worker process result', { byteLength: raw.byteLength });
             return [makeGlbReadyEvent(raw)];
           }
         }
@@ -235,7 +235,7 @@ function createMeshyState(): WebsiteState {
         for (const key of Object.keys(message)) {
           const raw = toArrayBuffer(message[key]);
           if (raw && looksLikeGlb(raw)) {
-            console.debug('[Meshy Downloader] GLB captured from worker message property', {
+            console.debug('[3D Downloader] GLB captured from worker message property', {
               key,
               byteLength: raw.byteLength,
             });
@@ -247,7 +247,7 @@ function createMeshyState(): WebsiteState {
       },
       detectBinaryResponse(buffer, sourceUrl) {
         if (!looksLikeGlb(buffer)) {
-          console.debug('[Meshy Downloader] Binary response is not decoded GLB yet', {
+          console.debug('[3D Downloader] Binary response is not decoded GLB yet', {
             byteLength: buffer.byteLength,
             firstBytes: getBytePreview(buffer),
             url: sourceUrl,
@@ -255,7 +255,7 @@ function createMeshyState(): WebsiteState {
           return [];
         }
 
-        console.debug('[Meshy Downloader] GLB captured from network response', {
+        console.debug('[3D Downloader] GLB captured from network response', {
           byteLength: buffer.byteLength,
           url: sourceUrl,
         });
@@ -276,7 +276,7 @@ function createTripoState(): WebsiteState {
     label: 'Tripo3D',
     workspaceUrl: 'https://www.tripo3d.ai/',
     overlay: {
-      eventPrefix: 'meshy-downloader',
+      eventPrefix: '3d-downloader',
       assetLabel: 'Tripo3D model',
       fileFormat: 'GLB',
     },
@@ -287,7 +287,7 @@ function createTripoState(): WebsiteState {
         const url = parsedUrl && isTripoModelUrl(parsedUrl.href) ? parsedUrl.href : undefined;
         if (!url) return [];
 
-        console.debug('[Meshy Downloader] Tripo3D GLB URL detected', url);
+        console.debug('[3D Downloader] Tripo3D GLB URL detected', url);
 
         return [{
           type: 'tripo-glb-url-detected',

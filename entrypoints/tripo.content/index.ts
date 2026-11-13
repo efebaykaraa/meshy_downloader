@@ -6,7 +6,7 @@ import { findWebsiteState } from '../../src/lib/website-state-machine';
 
 const websiteState = findWebsiteState(window.location.href);
 const overlayConfig = websiteState?.overlay ?? {
-  eventPrefix: 'meshy-downloader',
+  eventPrefix: '3d-downloader',
   assetLabel: 'Tripo3D model',
   fileFormat: 'GLB',
 };
@@ -107,7 +107,7 @@ function handleTripoGlbUrlDetected(payload: { url?: string; capturedAt?: number 
   modelGeneration += 1;
   pendingDownload = false;
 
-  console.debug('[Meshy Downloader] Active Tripo3D model updated', activeModel);
+  console.debug('[3D Downloader] Active Tripo3D model updated', activeModel);
 
   notifyOverlay('model-changed', {
     ...payload,
@@ -192,12 +192,12 @@ async function downloadActiveModel() {
     const state = await browser.runtime.sendMessage({ type: 'get-state' }) as DownloaderState;
     const { formatGlbTextures } = await import('../../src/lib/texture-format');
     buffer = await formatGlbTextures(buffer, state.textureFormat);
-    console.debug('[Meshy Downloader] Applied texture format to Tripo3D GLB', {
+    console.debug('[3D Downloader] Applied texture format to Tripo3D GLB', {
       textureFormat: state.textureFormat,
       byteLength: buffer.byteLength,
     });
   } catch (error) {
-    console.warn('[Meshy Downloader] Texture format conversion failed — downloading without conversion', error);
+    console.warn('[3D Downloader] Texture format conversion failed — downloading without conversion', error);
   }
 
   downloadBuffer(buffer, result.filename ?? 'tripo_model_cleaned.glb');
@@ -219,7 +219,7 @@ export default defineContentScript({
     installResourceObserver();
 
     const ui = await createShadowRootUi(ctx, {
-      name: 'tripo-downloader-overlay',
+      name: 'three-d-downloader-overlay',
       position: 'overlay',
       anchor: () => document.body ?? document.documentElement,
       onMount: (container) => {

@@ -1,7 +1,7 @@
 <script lang="ts">
   import OverlayShell from '../shared/OverlayShell.svelte';
 
-  export let eventPrefix = 'meshy-downloader';
+  export let eventPrefix = '3d-downloader';
   export let assetLabel = 'model';
   export let fileFormat = 'GLB';
   export let autoHideDelay = 5000;

@@ -132,7 +132,7 @@ export async function processTripoGlb(url: string): Promise<TripoProcessingResul
     throw new Error('Cleaned Tripo3D GLB validation failed.');
   }
 
-  console.debug('[Meshy Downloader] Tripo3D GLB cleaned', {
+  console.debug('[3D Downloader] Tripo3D GLB cleaned', {
     sourceByteLength: sourceBuffer.byteLength,
     outputByteLength: outputBuffer.byteLength,
     sourceSummary,
